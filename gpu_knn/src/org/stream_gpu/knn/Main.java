@@ -34,7 +34,7 @@ public class Main {
 	public static void main(String[] args){
 		
 		int k = 16;
-		int window = 1024;
+		int window = 512;
 		
 		int test_size = 10000;
 		int train_size = 1000 * 1000;

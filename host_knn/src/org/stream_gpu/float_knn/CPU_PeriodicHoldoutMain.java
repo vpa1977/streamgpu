@@ -4,6 +4,7 @@ import org.stream_gpu.float_knn.float_search.LinearNNSearch_Float;
 
 import weka.classifiers.lazy.IBk;
 import moa.classifiers.meta.WEKAClassifier;
+import moa.streams.generators.RandomTreeGenerator;
 import moa.tasks.EvaluatePeriodicHeldOutTest;
 import moa.tasks.NullMonitor;
 
@@ -34,12 +35,12 @@ public class CPU_PeriodicHoldoutMain {
 
 	public static void main(String[] args){
 		
-		int k = 5;
-		int window = 10;
+		int k = 16;
+		int window = 256;
 		
 		int test_size = 10000;
 		int train_size = 1000 * 1000;
-		
+				
 		IBk kMeans = new IBk(k);
 		kMeans.setNearestNeighbourSearchAlgorithm(new LinearNNSearch_Float());
 		kMeans.setWindowSize(window);
@@ -47,10 +48,13 @@ public class CPU_PeriodicHoldoutMain {
 		WEKAClassifier wekaClassifier = new WEKAClassifier();
 		wekaClassifier.baseLearnerOption.setCurrentObject(kMeans);
 
+		RandomTreeGenerator generator = new RandomTreeGenerator(); 
+		
 		EvaluatePeriodicHeldOutTest test = new EvaluatePeriodicHeldOutTest();
 		test.learnerOption.setCurrentObject(wekaClassifier);
 		test.testSizeOption.setValue(test_size);
 		test.trainSizeOption.setValue(train_size);
+		test.streamOption.setCurrentObject(generator);
 		
 		Object ret = test.doTask(new PrintMontitor(), null);
 		System.out.println(ret);

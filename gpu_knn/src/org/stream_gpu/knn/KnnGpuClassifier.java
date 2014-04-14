@@ -72,6 +72,7 @@ public class KnnGpuClassifier extends  AbstractClassifier {
 		m_distance_kernel = m_cl_context.createProgram(source).createKernel("square_distance");
 		m_sorter = new BitonicSort(cl_context, m_window_size); 
 		m_indices = new int[m_window_size];
+		m_distance_weighting = WEIGHT_NONE;
 		for (int i = 0;i < m_indices.length; i ++)
 			m_indices [i]= i;
     }
@@ -95,7 +96,7 @@ public class KnnGpuClassifier extends  AbstractClassifier {
      * @throws Exception if computation goes wrong or has no class attribute
      */
     
-    protected double [] makeDistribution(Instance[] neighbours, float[] distances)
+    protected double [] makeDistribution(int[] indices, float[] distances)
       throws Exception {
 
       double total = 0, weight;
@@ -109,17 +110,17 @@ public class KnnGpuClassifier extends  AbstractClassifier {
         total = (double)m_num_classes / Math.max(1,m_window_size);
       }
 
-      for(int i=0; i < neighbours.length; i++) {
+      for(int i=0; i < indices.length; i++) {
         // Collect class counts
-        Instance current = neighbours[i];
+        Instance current = m_window.instances()[indices[i]];
         
-        distances[i] = (float)Math.sqrt(distances[i]/m_num_attributes_used);
+        
         switch (m_distance_weighting) {
           case WEIGHT_INVERSE:
-            weight = 1.0 / (distances[i] + 0.001); // to avoid div by zero
+            weight = 1.0 / (Math.sqrt(distances[i]/m_num_attributes_used) + 0.001); // to avoid div by zero
             break;
           case WEIGHT_SIMILARITY:
-            weight = 1.0 - distances[i];
+            weight = 1.0 - Math.sqrt(distances[i]/m_num_attributes_used);
             break;
           default:                                 // WEIGHT_NONE:
             weight = 1.0;
@@ -197,13 +198,7 @@ public class KnnGpuClassifier extends  AbstractClassifier {
     		int[] indices = new int[ m_window_size];
     		System.arraycopy(m_indices, 0, indices, 0, indices.length);
     		m_sorter.sort(dists, indices);
-    		Instance[] neighbours = new Instance[m_k];
-    		for (int i = 0; i < neighbours.length ; i ++)
-    		{
-    			neighbours[i] = m_window.instances()[indices[i]];
-    		}
-    		return makeDistribution(neighbours, dists);
-			
+    		return makeDistribution(indices, dists);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
