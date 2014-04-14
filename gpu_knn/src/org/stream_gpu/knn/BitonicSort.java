@@ -21,7 +21,6 @@ import com.nativelibs4java.opencl.CLQueue;
 
 public class BitonicSort {
 	
-	private static int FLOAT_SIZE = 4;
 	private long m_workgroup_size;
 	private long m_local_size;
 	
@@ -33,8 +32,9 @@ public class BitonicSort {
 	private CLKernel m_sort_merge;
 	private CLKernel m_sort_merge_last;
 	private CLBuffer<Float> m_io_buffer;
+	private CLBuffer<Integer> m_indices_buffer;
 
-	public BitonicSort(CLContext cl_context)
+	public BitonicSort(CLContext cl_context, int length)
 	{
 		m_context  = cl_context;
 		String source = null;
@@ -51,38 +51,60 @@ public class BitonicSort {
 		m_workgroup_size = max_workgroup_size();
 		m_local_size = (int)Math.pow(2, Math.floor(Math.log((float)m_workgroup_size)/Math.log(2.0f))); // align to power of 2
 		m_sort_queue = m_context.createDefaultQueue();
+		m_indices_buffer = m_context.createBuffer(Usage.InputOutput,Integer.class, length);
+		m_io_buffer = m_context.createBuffer(Usage.InputOutput,Float.class, length);
 	}
 	
-	public float[] sort(float[] array, boolean ascending)
+	public float[] sort(float[] array, int[] indices)
 	{
 		
-		int direction;
-	    if (ascending) 
-	    	direction = 0; 
-	    else 
-	    	direction =1;
+		int direction = 0;
 	    
 		// create buffer and map it
-		m_io_buffer = m_context.createBuffer(Usage.InputOutput,Float.class, array.length);
+	    
+	    Pointer<Integer> p_indices = m_indices_buffer.map(m_sort_queue, CLMem.MapFlags.Write, new CLEvent[0]);
+	    p_indices.setInts(indices);
+	    m_indices_buffer.unmap(m_sort_queue, p_indices, new CLEvent[0]);
+	    
+		
 		Pointer<Float> p_float = m_io_buffer.map(m_sort_queue, CLMem.MapFlags.Write, new CLEvent[0]);
 		p_float.setFloats(array);
 		m_io_buffer.unmap(m_sort_queue, p_float, new CLEvent[0]);
 		
-		
+		m_sort_queue.finish();
 		
 		// init io buffer arg
 		m_sort_init.setArg(0, m_io_buffer);
+		m_sort_init.setArg(2, m_indices_buffer);
+		m_sort_init.setArg(3, LocalSize.ofIntArray(8*m_local_size));
+		
 		m_sort_stage_0.setArg(0, m_io_buffer);
+		
+		m_sort_stage_0.setArg(3, m_indices_buffer);
+		m_sort_stage_0.setArg(4, LocalSize.ofIntArray(8*m_local_size));
+		
 		m_sort_stage_n.setArg(0, m_io_buffer);
+		
+		m_sort_stage_n.setArg(4, m_indices_buffer);
+		m_sort_stage_n.setArg(5, LocalSize.ofIntArray(8*m_local_size));
+		
+		
 		m_sort_merge.setArg(0, m_io_buffer);
+		
+		m_sort_merge.setArg(4, m_indices_buffer);
+		m_sort_merge.setArg(5, LocalSize.ofIntArray(8*m_local_size));
+		
 		m_sort_merge_last.setArg(0, m_io_buffer);
+		
+		m_sort_merge_last.setArg(3, m_indices_buffer);
+		m_sort_merge_last.setArg(4, LocalSize.ofIntArray(8*m_local_size));
 
 		//
-		m_sort_init.setArg(1, new LocalSize(8 * m_local_size * FLOAT_SIZE));
-		m_sort_stage_0.setArg(1, new LocalSize(8 * m_local_size * FLOAT_SIZE));
-		m_sort_stage_n.setArg(1, new LocalSize(8 * m_local_size * FLOAT_SIZE));
-		m_sort_merge.setArg(1, new LocalSize(8 * m_local_size * FLOAT_SIZE));
-		m_sort_merge_last.setArg(1, new LocalSize(8 * m_local_size * FLOAT_SIZE));
+		m_sort_init.setArg(1, LocalSize.ofFloatArray(8 * m_local_size));
+		m_sort_stage_0.setArg(1, LocalSize.ofFloatArray(8 * m_local_size));
+		m_sort_stage_n.setArg(1, LocalSize.ofFloatArray(8 * m_local_size));
+		m_sort_merge.setArg(1, LocalSize.ofFloatArray(8 * m_local_size));
+		m_sort_merge_last.setArg(1, LocalSize.ofFloatArray(8 * m_local_size));
 		//
 		long local_size = m_local_size;
 		long global_size = array.length /8; 
@@ -140,11 +162,14 @@ public class BitonicSort {
 		  m_sort_queue.finish();
 
 			p_float = m_io_buffer.map(m_sort_queue, CLMem.MapFlags.Read, new CLEvent[0]);
-			float[] result = p_float.getFloats();
+			p_float.getFloats(array);
 			m_io_buffer.unmap(m_sort_queue, p_float, new CLEvent[0]);
-			m_io_buffer.release();
+			//m_io_buffer.release();
 			
-			return result;
+			p_indices =  m_indices_buffer.map(m_sort_queue,  CLMem.MapFlags.Read, new CLEvent[0]);
+			p_indices.getInts(indices);
+			m_indices_buffer.unmap(m_sort_queue, p_indices, new CLEvent[0]);
+			return array;
 	}
 
 	private long max_workgroup_size() {

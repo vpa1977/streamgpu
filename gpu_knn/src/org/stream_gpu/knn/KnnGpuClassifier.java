@@ -26,6 +26,13 @@ import com.nativelibs4java.opencl.CLQueue;
 public class KnnGpuClassifier extends  AbstractClassifier {
 
     private static final long serialVersionUID = 1L;
+    /** no weighting. */
+    public static final int WEIGHT_NONE = 1;
+    /** weight by 1/distance. */
+    public static final int WEIGHT_INVERSE = 2;
+    /** weight by 1-distance. */
+    public static final int WEIGHT_SIMILARITY = 4;
+
     private HostWindow m_window;
     private int m_k;
     private CLQueue m_data_transfer_queue;
@@ -39,6 +46,10 @@ public class KnnGpuClassifier extends  AbstractClassifier {
     private int m_num_classes;
 	private int m_num_attributes;
 	private int m_class_type;
+	private int[] m_indices;
+	private BitonicSort m_sorter;
+	private int m_num_attributes_used;
+	private int m_distance_weighting;
 
     @Override
     public String getPurposeString() {
@@ -59,8 +70,10 @@ public class KnnGpuClassifier extends  AbstractClassifier {
     		source = readKernel("distance.cl");
     	} catch (Exception e){ e.printStackTrace();}
 		m_distance_kernel = m_cl_context.createProgram(source).createKernel("square_distance");
-		
-		
+		m_sorter = new BitonicSort(cl_context, m_window_size); 
+		m_indices = new int[m_window_size];
+		for (int i = 0;i < m_indices.length; i ++)
+			m_indices [i]= i;
     }
     
 
@@ -81,27 +94,27 @@ public class KnnGpuClassifier extends  AbstractClassifier {
      * @return the probability distribution
      * @throws Exception if computation goes wrong or has no class attribute
      */
-/*    
-    protected double [] makeDistribution(Instances neighbours, double[] distances)
+    
+    protected double [] makeDistribution(Instance[] neighbours, float[] distances)
       throws Exception {
 
       double total = 0, weight;
       double [] distribution = new double [m_num_classes];
       
       // Set up a correction to the estimator
-      if (m_ClassType == Attribute.NOMINAL) {
-        for(int i = 0; i < m_NumClasses; i++) {
-  	distribution[i] = 1.0 / Math.max(1,m_Train.numInstances());
+      if (m_class_type == Attribute.NOMINAL) {
+        for(int i = 0; i < m_num_classes; i++) {
+        	distribution[i] = 1.0 / Math.max(1,m_window_size);
         }
-        total = (double)m_NumClasses / Math.max(1,m_Train.numInstances());
+        total = (double)m_num_classes / Math.max(1,m_window_size);
       }
 
-      for(int i=0; i < neighbours.numInstances(); i++) {
+      for(int i=0; i < neighbours.length; i++) {
         // Collect class counts
-        Instance current = neighbours.instance(i);
-        distances[i] = distances[i]*distances[i];
-        distances[i] = Math.sqrt(distances[i]/m_NumAttributesUsed);
-        switch (m_DistanceWeighting) {
+        Instance current = neighbours[i];
+        
+        distances[i] = (float)Math.sqrt(distances[i]/m_num_attributes_used);
+        switch (m_distance_weighting) {
           case WEIGHT_INVERSE:
             weight = 1.0 / (distances[i] + 0.001); // to avoid div by zero
             break;
@@ -114,7 +127,7 @@ public class KnnGpuClassifier extends  AbstractClassifier {
         }
         weight *= current.weight();
         try {
-          switch (m_ClassType) {
+          switch (m_class_type) {
             case Attribute.NOMINAL:
               distribution[(int)current.classValue()] += weight;
               break;
@@ -134,20 +147,32 @@ public class KnnGpuClassifier extends  AbstractClassifier {
       }
       return distribution;
     }
-*/
+    
+    private void buildClassifier( Instances instances)
+    {
+		m_num_classes = instances.numClasses();
+		m_num_attributes = instances.numAttributes();
+		m_class_type = instances.classAttribute().type();
+		
+		m_window = new HostWindow(m_cl_context, m_window_size, m_num_attributes - 1);
+		m_output = m_cl_context.createBuffer(Usage.InputOutput,Float.class, m_window.getWindowSize());
+		m_input = m_cl_context.createBuffer(Usage.Input, Float.class, m_window.getInstanceSize());
+		m_num_attributes_used = 0;
+        for (int i = 0; i < instances.numAttributes(); i++) {
+          if ((i != instances.classIndex()) && 
+    	  (instances.attribute(i).isNominal() || instances.attribute(i).isNumeric())) {
+        	  m_num_attributes_used += 1;
+          }
+        }
+
+    }
 
     @Override
     public void trainOnInstanceImpl(Instance inst) {
     	double[] values = inst.toDoubleArray();
     	
     	if (m_window == null) {
-    		m_num_classes = inst.dataset().numClasses();
-    		m_num_attributes = inst.dataset().numAttributes();
-    		m_class_type = inst.dataset().classAttribute().type();
-    		
-    		m_window = new HostWindow(m_cl_context, m_window_size, m_num_attributes - 1);
-    		m_output = m_cl_context.createBuffer(Usage.InputOutput,Float.class, m_window.getWindowSize());
-    		m_input = m_cl_context.createBuffer(Usage.Input, Float.class, m_window.getInstanceSize());
+    		buildClassifier( inst.dataset());
     	}
     	int classIndex = inst.classIndex();
     	int offset =0;
@@ -163,20 +188,22 @@ public class KnnGpuClassifier extends  AbstractClassifier {
 		}
     }
     
-    public float[] sort(float[] input)
-    {
-    	Arrays.sort(input);
-    	float[] dest = new float[m_k];
-    	System.arraycopy(input, 0, dest, 0, m_k);
-    	return dest;
-    }
-    
-    
+   
 
     @Override
     public synchronized double[] getVotesForInstance(Instance inst) {
     	try {
-			//return makeDistribution(sort(distance(inst)));
+    		float[] dists = distance(inst);
+    		int[] indices = new int[ m_window_size];
+    		System.arraycopy(m_indices, 0, indices, 0, indices.length);
+    		m_sorter.sort(dists, indices);
+    		Instance[] neighbours = new Instance[m_k];
+    		for (int i = 0; i < neighbours.length ; i ++)
+    		{
+    			neighbours[i] = m_window.instances()[indices[i]];
+    		}
+    		return makeDistribution(neighbours, dists);
+			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

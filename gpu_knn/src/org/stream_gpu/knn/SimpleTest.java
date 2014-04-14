@@ -72,11 +72,12 @@ public class SimpleTest {
 		float [] dist = clazz.distance(inst);
 		
 		
-		float[] to_be_sorted = new float[] {16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1};
+		float[] to_be_sorted = new float[] {16,15,14,22,12,11,10,9,8,7,6,5,4,3,2,1};
+		int[] indices = new int[]{ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
 		
-		BitonicSort sort = new BitonicSort(context);
+		BitonicSort sort = new BitonicSort(context , to_be_sorted.length);
 		
-		float[] result = sort.sort(to_be_sorted, true);
+		float[] result = sort.sort(to_be_sorted, indices);
 		//loat []  dist1 =  clazz.distance(inst1);
 		
 		EuclideanDistance float_dist = new EuclideanDistance(dataset);
