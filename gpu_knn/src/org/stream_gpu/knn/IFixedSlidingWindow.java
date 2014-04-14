@@ -23,6 +23,6 @@ public interface IFixedSlidingWindow {
 
 	public abstract CLBuffer<Float> getBuffer();
 
-	public abstract CLEvent addInstance(CLQueue queue, Instance inst, float[] instance);
+	public abstract CLEvent addInstance(CLQueue queue, Instance inst, float[] instance) throws Exception;
 
 }

@@ -47,10 +47,12 @@ public class HostWindow implements IFixedSlidingWindow {
 	 * nativelibs4java.opencl.CLQueue, float[])
 	 */
 	@Override
-	public CLEvent addInstance(CLQueue queue, Instance inst, float[] instance) {
+	public CLEvent addInstance(CLQueue queue, Instance inst, float[] instance) throws Exception {
 		m_index++;
 		if (m_index >= m_window_size)
 			m_index = 0;
+		if (instance.length == inst.toDoubleArray().length)
+			throw new Exception("Invalid attribute array");
 		m_instances[m_index] = inst;
 		m_mapped = m_data.map(queue, MapFlags.Write, m_index * m_instance_size,
 				m_instance_size, new CLEvent[0]);

@@ -33,8 +33,8 @@ class PrintMontitor extends NullMonitor
 public class Main {
 	public static void main(String[] args){
 		
-		int k = 2;
-		int window = 10;
+		int k = 20;
+		int window = 1000;
 		
 		int test_size = 10000;
 		int train_size = 1000 * 1000;
