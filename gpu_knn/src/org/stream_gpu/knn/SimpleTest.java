@@ -60,7 +60,7 @@ public class SimpleTest {
 		
 		Instances dataset = new Instances( "test", attinfo , 1);
 		dataset.setClassIndex(0);
-		Instance inst = new DenseInstance(1, new double[]{ 0, 0, 0 , 0 });
+		Instance inst = new DenseInstance(1, new double[]{ 1, 1, 1 , 1 });
 		Instance inst1 = new DenseInstance(1, new double[]{ 2, 2, 2, 2});
 		inst.setDataset(dataset);
 		inst1.setDataset(dataset);

@@ -33,7 +33,7 @@ public class KnnGpuClassifier extends  AbstractClassifier {
     /** weight by 1-distance. */
     public static final int WEIGHT_SIMILARITY = 4;
 
-    private HostWindow m_window;
+    private SlidingWindow m_window;
     private int m_k;
     private CLQueue m_data_transfer_queue;
     private CLQueue m_calc_queue;
@@ -42,11 +42,13 @@ public class KnnGpuClassifier extends  AbstractClassifier {
     private CLKernel m_distance_kernel;
     private CLBuffer<Float> m_output;
     private CLBuffer<Float> m_input;
+    private CLBuffer<Float> m_ranges;
     private int m_window_size;
     private int m_num_classes;
 	private int m_num_attributes;
 	private int m_class_type;
 	private int[] m_indices;
+	
 	private BitonicSort m_sorter;
 	private int m_num_attributes_used;
 	private int m_distance_weighting;
@@ -110,11 +112,9 @@ public class KnnGpuClassifier extends  AbstractClassifier {
         total = (double)m_num_classes / Math.max(1,m_window_size);
       }
 
-      for(int i=0; i < indices.length; i++) {
+      for(int i=0; i < m_k; i++) {
         // Collect class counts
         Instance current = m_window.instances()[indices[i]];
-        
-        
         switch (m_distance_weighting) {
           case WEIGHT_INVERSE:
             weight = 1.0 / (Math.sqrt(distances[i]/m_num_attributes_used) + 0.001); // to avoid div by zero
@@ -155,9 +155,10 @@ public class KnnGpuClassifier extends  AbstractClassifier {
 		m_num_attributes = instances.numAttributes();
 		m_class_type = instances.classAttribute().type();
 		
-		m_window = new HostWindow(m_cl_context, m_window_size, m_num_attributes - 1);
+		m_window = new SlidingWindow(m_cl_context, m_window_size, instances);
 		m_output = m_cl_context.createBuffer(Usage.InputOutput,Float.class, m_window.getWindowSize());
 		m_input = m_cl_context.createBuffer(Usage.Input, Float.class, m_window.getInstanceSize());
+		m_ranges = m_cl_context.createBuffer(Usage.Input, Float.class, m_window.getRangesSize());
 		m_num_attributes_used = 0;
         for (int i = 0; i < instances.numAttributes(); i++) {
           if ((i != instances.classIndex()) && 
@@ -170,23 +171,10 @@ public class KnnGpuClassifier extends  AbstractClassifier {
 
     @Override
     public void trainOnInstanceImpl(Instance inst) {
-    	double[] values = inst.toDoubleArray();
-    	
     	if (m_window == null) {
     		buildClassifier( inst.dataset());
     	}
-    	int classIndex = inst.classIndex();
-    	int offset =0;
-    	float[] array = new float[ values.length - 1];
-    	for (int i = 0 ; i < values.length ; i ++ ) 
-    		if (i != classIndex)
-    			array[offset++] = (float)values[i];
-    	try {
-			m_last_event = m_window.addInstance(m_data_transfer_queue,inst, array);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		m_last_event = m_window.addInstance(m_data_transfer_queue,inst);
     }
     
    
@@ -211,13 +199,16 @@ public class KnnGpuClassifier extends  AbstractClassifier {
     	if (m_window == null)
     		throw new IllegalArgumentException();
     	
-    	CLEvent input_ready = transferInstance(inst, m_input);
+    	CLEvent input_ready = m_window.storeTargetInstance(m_calc_queue, inst,  m_input, m_ranges);
     	
 		m_distance_kernel.setArgs(
 						 m_input,
 						 m_window.getBuffer(),
+						 m_ranges,
 						 m_output, 
-						 m_window.getInstanceSize());
+						 m_window.getInstanceSize(), 
+						 m_window.numericsSize(), 
+						 m_window.nominalsSize());
 
     	CLEvent distance_done = m_distance_kernel.enqueueNDRange(m_calc_queue,
     			 			null, // offsets
