@@ -11,6 +11,7 @@ import weka.core.Instances;
 import com.nativelibs4java.opencl.CLBuffer;
 import com.nativelibs4java.opencl.CLContext;
 import com.nativelibs4java.opencl.CLEvent;
+import com.nativelibs4java.opencl.LocalSize;
 import com.nativelibs4java.opencl.CLMem.MapFlags;
 import com.nativelibs4java.opencl.CLMem.Usage;
 import com.nativelibs4java.opencl.CLQueue;
@@ -27,6 +28,7 @@ public class SlidingWindow  {
 
 	private CLBuffer<Float> m_data;
 	private int m_index;
+	private int m_flush_index;
 	private int m_window_size;
 	private int m_instance_size;
 	private Pointer<Float> m_mapped = null;
@@ -35,11 +37,13 @@ public class SlidingWindow  {
 	private Integer[] m_numerics;
 	private Integer[] m_nominals;
 	private float[] m_ranges;
+	private boolean m_full_flush;
 
 	public SlidingWindow(CLContext context, int window_size, Instances dataset) {
 		m_index = -1;
 		m_window_size = window_size;
 		m_dataset = dataset;
+		m_flush_index = 0;
 		prepare(context);
 	}
 	
@@ -82,6 +86,42 @@ public class SlidingWindow  {
 	{
 		return m_nominals.length;
 	}
+	
+	public CLEvent flushInstances(CLQueue queue)
+	{
+		CLEvent ret = null;
+		if (m_flush_index == m_index)
+			return ret;
+		
+		if (m_full_flush)
+		{
+			ret = flush(queue,0, m_window_size-1);
+		}
+		else if (m_index < m_flush_index) 
+		{
+			ret = flush(queue,0, m_index);
+			ret = flush(queue,m_flush_index, m_window_size-1);
+		} 
+		else 
+		{
+			ret = flush(queue,m_flush_index , m_index);
+		}
+		m_full_flush = false;
+		m_flush_index = m_index;
+		return ret;
+	}
+
+	private CLEvent flush(CLQueue queue, int start_index, int end_index) {
+		m_mapped = m_data.map(queue, MapFlags.Write, m_instance_size * start_index, (1+end_index -start_index ) *	m_instance_size, new CLEvent[0]);
+		for (int i = start_index ; i <=end_index; i ++ )
+		{
+			float[] transfer = makeTransferArray(m_instances[i]);
+			updateRanges(transfer, m_ranges);
+			m_mapped.setFloatsAtOffset((i-start_index) * transfer.length * 4,transfer );	
+		}
+		return m_data.unmap(queue, m_mapped, new CLEvent[0]);
+	}
+
 
 	/*
 	 * (non-Javadoc)
@@ -90,19 +130,14 @@ public class SlidingWindow  {
 	 * nativelibs4java.opencl.CLQueue, float[])
 	 */
 	
-	public CLEvent addInstance(CLQueue queue, Instance inst) {
+	public void addInstance(CLQueue queue, Instance inst) {
 		m_index++;
 		if (m_index >= m_window_size)
 			m_index = 0;
-
-		m_instances[m_index] = inst;
-		m_mapped = m_data.map(queue, MapFlags.Write, m_index * m_instance_size,
-				m_instance_size, new CLEvent[0]);
 		
-		float[] transfer = makeTransferArray(inst);
-		updateRanges(transfer, m_ranges);
-		m_mapped.setFloats(transfer);
-		return m_data.unmap(queue, m_mapped, new CLEvent[0]);
+		if (m_index == m_flush_index)
+			m_full_flush = true;
+		m_instances[m_index] = inst;
 	}
 
 

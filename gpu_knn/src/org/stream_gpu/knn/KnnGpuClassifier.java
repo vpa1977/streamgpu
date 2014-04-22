@@ -174,7 +174,7 @@ public class KnnGpuClassifier extends  AbstractClassifier {
     	if (m_window == null) {
     		buildClassifier( inst.dataset());
     	}
-		m_last_event = m_window.addInstance(m_data_transfer_queue,inst);
+		m_window.addInstance(m_data_transfer_queue,inst);
     }
     
    
@@ -182,6 +182,7 @@ public class KnnGpuClassifier extends  AbstractClassifier {
     @Override
     public synchronized double[] getVotesForInstance(Instance inst) {
     	try {
+    		m_last_event = m_window.flushInstances(m_data_transfer_queue);
     		float[] dists = distance(inst);
     		int[] indices = new int[ m_window_size];
     		System.arraycopy(m_indices, 0, indices, 0, indices.length);
