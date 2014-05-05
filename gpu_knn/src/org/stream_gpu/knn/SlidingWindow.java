@@ -26,8 +26,10 @@ import com.nativelibs4java.opencl.CLQueue;
 public class SlidingWindow  {
 
 
+	private static final int FLOAT_SIZE = 4;
 	private CLBuffer<Float> m_data;
 	private int m_index;
+	private boolean m_ready;
 	private int m_flush_index;
 	private int m_window_size;
 	private int m_instance_size;
@@ -38,12 +40,16 @@ public class SlidingWindow  {
 	private Integer[] m_nominals;
 	private float[] m_ranges;
 	private boolean m_full_flush;
+	private int m_count;
 
 	public SlidingWindow(CLContext context, int window_size, Instances dataset) {
 		m_index = -1;
 		m_window_size = window_size;
 		m_dataset = dataset;
 		m_flush_index = 0;
+		m_count = 0;
+		m_ready = false;
+		m_full_flush = false;
 		prepare(context);
 	}
 	
@@ -73,6 +79,8 @@ public class SlidingWindow  {
 			m_ranges[i+1] = Float.MIN_VALUE;
 		}
 		m_instance_size = numericsSize() + nominalsSize();
+		
+		
 		m_data = context.createFloatBuffer(Usage.Input, m_window_size* m_instance_size);
 		m_instances = new Instance[m_window_size];
 	}
@@ -117,7 +125,7 @@ public class SlidingWindow  {
 		{
 			float[] transfer = makeTransferArray(m_instances[i]);
 			updateRanges(transfer, m_ranges);
-			m_mapped.setFloatsAtOffset((i-start_index) * transfer.length * 4,transfer );	
+			m_mapped.setFloatsAtOffset((i-start_index) * transfer.length * FLOAT_SIZE,transfer );	
 		}
 		return m_data.unmap(queue, m_mapped, new CLEvent[0]);
 	}
@@ -132,12 +140,27 @@ public class SlidingWindow  {
 	
 	public void addInstance(CLQueue queue, Instance inst) {
 		m_index++;
-		if (m_index >= m_window_size)
+		if (m_index >= m_window_size) {
 			m_index = 0;
+			m_ready = true;
+		}
 		
-		if (m_index == m_flush_index)
+		if (m_index == m_flush_index && m_instances[0]!=null) 
 			m_full_flush = true;
+		
 		m_instances[m_index] = inst;
+		
+		tryFlush(queue);
+	}
+	
+	public void tryFlush(CLQueue queue) 
+	{
+		m_count ++;
+		if (m_count * getInstanceSize() * 4 >= 512) {
+			flushInstances(queue);
+			m_count = 0;
+		}
+		
 	}
 
 
@@ -146,7 +169,11 @@ public class SlidingWindow  {
 		int offset = 0;
 		for (int i = 0; i < m_numerics.length; i ++ ) 
 		{
-			transfer[offset++] = (float) inst.value(m_numerics[i]);
+			int idx = m_numerics[i];
+			if (inst == null){
+				System.out.println("WHat !!~!");
+			}
+			transfer[offset++] = (float) inst.value(idx);
 		}
 
 		for (int i = 0; i < m_nominals.length; i ++ ) 
@@ -249,6 +276,11 @@ public class SlidingWindow  {
 	{
 		return m_instances;
 	
+	}
+
+
+	public boolean ready() {
+		return m_ready;
 	}
 
 

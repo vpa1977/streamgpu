@@ -9,6 +9,7 @@ import moa.tasks.EvaluatePeriodicHeldOutTest;
 import moa.tasks.NullMonitor;
 
 import com.nativelibs4java.opencl.CLContext;
+import com.nativelibs4java.opencl.CLDevice;
 import com.nativelibs4java.opencl.JavaCL;
 
 public class DualTest {
@@ -19,21 +20,23 @@ public class DualTest {
 	public static void main(String[] args) {
 		
 		int k = 32;
-		int window = 128;
+		int window = 8192*8;
 		
 		int test_size  = 1000;
-		int train_size = 10000 * 100;
+		int train_size = 8192*8 * 8;
 		
 		
 		
 		RandomTreeGenerator generator = new RandomTreeGenerator();
 		
-		generator.numNumericsOption.setValue(128);
-		generator.numNominalsOption.setValue(128);
-		
+		//generator.numNumericsOption.setValue(128);
+		//generator.numNominalsOption.setValue(128);
+		CLDevice device = JavaCL.listPlatforms()[0].listAllDevices(false)[0];
+		System.out.println(device.getName());
 		CLContext context = JavaCL.createContext(null,
-				JavaCL.listPlatforms()[0].listAllDevices(false)[0]);
+				device);
 
+		
 		KnnGpuClassifier classifier = new KnnGpuClassifier(context, window, k);
 		
 		IBk kMeans = new IBk(k);

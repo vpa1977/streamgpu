@@ -19,6 +19,7 @@ import com.nativelibs4java.opencl.CLBuffer;
 import com.nativelibs4java.opencl.CLContext;
 import com.nativelibs4java.opencl.CLEvent;
 import com.nativelibs4java.opencl.CLKernel;
+import com.nativelibs4java.opencl.CLMem;
 import com.nativelibs4java.opencl.CLMem.MapFlags;
 import com.nativelibs4java.opencl.CLMem.Usage;
 import com.nativelibs4java.opencl.CLQueue;
@@ -47,7 +48,7 @@ public class KnnGpuClassifier extends  AbstractClassifier {
     private int m_num_classes;
 	private int m_num_attributes;
 	private int m_class_type;
-	private int[] m_indices;
+	
 	
 	private BitonicSort m_sorter;
 	private int m_num_attributes_used;
@@ -73,10 +74,7 @@ public class KnnGpuClassifier extends  AbstractClassifier {
     	} catch (Exception e){ e.printStackTrace();}
 		m_distance_kernel = m_cl_context.createProgram(source).createKernel("square_distance");
 		m_sorter = new BitonicSort(cl_context, m_window_size); 
-		m_indices = new int[m_window_size];
 		m_distance_weighting = WEIGHT_NONE;
-		for (int i = 0;i < m_indices.length; i ++)
-			m_indices [i]= i;
     }
     
 
@@ -98,11 +96,20 @@ public class KnnGpuClassifier extends  AbstractClassifier {
      * @throws Exception if computation goes wrong or has no class attribute
      */
     
-    protected double [] makeDistribution(int[] indices, float[] distances)
+    protected double [] makeDistribution(int[] indices, CLBuffer<Float> distance_buffer)
       throws Exception {
 
       double total = 0, weight;
       double [] distribution = new double [m_num_classes];
+      float[] distances = null;
+      
+      if (m_distance_weighting != WEIGHT_NONE)
+      {
+    	 distances = new float[ indices.length];
+    	 Pointer<Float> mapped = distance_buffer.map(m_sorter.getQueue(),  CLMem.MapFlags.Read, new CLEvent[0]);
+    	 mapped.getFloats(distances);
+    	 distance_buffer.unmap(m_sorter.getQueue(), mapped, new CLEvent[0]);
+      }
       
       // Set up a correction to the estimator
       if (m_class_type == Attribute.NOMINAL) {
@@ -182,12 +189,13 @@ public class KnnGpuClassifier extends  AbstractClassifier {
     @Override
     public synchronized double[] getVotesForInstance(Instance inst) {
     	try {
+    		if (!m_window.ready())
+    			throw new IllegalArgumentException("Not enough values in the sliding window");
     		m_last_event = m_window.flushInstances(m_data_transfer_queue);
-    		float[] dists = distance(inst);
-    		int[] indices = new int[ m_window_size];
-    		System.arraycopy(m_indices, 0, indices, 0, indices.length);
-    		m_sorter.sort(dists, indices);
-    		return makeDistribution(indices, dists);
+    		CLBuffer<Float> distances = distance(inst);
+    		int[] indices = new int[m_k];
+    		m_sorter.sort(distances, indices);
+    		return makeDistribution(indices, distances);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -195,7 +203,7 @@ public class KnnGpuClassifier extends  AbstractClassifier {
     	return new double[0];
     }
     
-    public float[] distance(Instance inst) 
+    public CLBuffer<Float> distance(Instance inst) 
     {
     	if (m_window == null)
     		throw new IllegalArgumentException();
@@ -216,27 +224,10 @@ public class KnnGpuClassifier extends  AbstractClassifier {
     						new long[] { m_window.getWindowSize() }, // global sizes 
     						null, // local sizes
     			 new CLEvent[]{ m_last_event , input_ready} ); 
-    	
-		Pointer<Float> result = m_output.map(m_calc_queue, MapFlags.Read,	new CLEvent[]{distance_done});
-		float[] result_array = result.getFloats();
-		//result.setFloats(new float[result_array.length]);
-		m_output.unmap(m_calc_queue, result , new CLEvent[0]);
 		m_calc_queue.finish();
-		return result_array;
+		return m_output;
     }
 
-	private CLEvent transferInstance(Instance inst, CLBuffer<Float> buffer) {
-		int classIndex = inst.classIndex();
-    	int offset =0;
-		double[] values = inst.toDoubleArray();
-    	float[] array = new float[ m_window.getInstanceSize() ];
-    	for (int i = 0 ; i < values.length ; i ++ )
-    		if (classIndex != i)
-    		array[offset++] = (float)values[i];
-    	Pointer<Float> data = buffer.map(m_calc_queue, MapFlags.Write, new CLEvent[0]);
-    	data.setFloats(array);
-    	return buffer.unmap(m_calc_queue, data, new CLEvent[0]);
-	}
 
     @Override
     protected Measurement[] getModelMeasurementsImpl() {

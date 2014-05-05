@@ -11,6 +11,7 @@ import weka.core.DenseInstance;
 import weka.core.Instance;
 import weka.core.Instances;
 
+import com.nativelibs4java.opencl.CLBuffer;
 import com.nativelibs4java.opencl.CLContext;
 import com.nativelibs4java.opencl.JavaCL;
 
@@ -70,7 +71,7 @@ public class SimpleTest {
 		
 		
 		
-		float [] dist = clazz.distance(inst);
+		CLBuffer<Float> dist = clazz.distance(inst);
 		
 		
 		float[] to_be_sorted = new float[] {16,15,14,22,12,11,10,9,8,7,6,5,4,3,2,1};
@@ -78,7 +79,7 @@ public class SimpleTest {
 		
 		BitonicSort sort = new BitonicSort(context , to_be_sorted.length);
 		
-		float[] result = sort.sort(to_be_sorted, indices);
+		//float[] result = sort.sort(to_be_sorted, indices);
 		//loat []  dist1 =  clazz.distance(inst1);
 		
 		EuclideanDistance float_dist = new EuclideanDistance(dataset);

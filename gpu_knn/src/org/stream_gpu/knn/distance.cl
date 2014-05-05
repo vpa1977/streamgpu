@@ -17,6 +17,8 @@ __kernel void square_distance(__global const float* input,
 	float val;
 	float width;
 	
+	
+	
 	for (int i = 0; i < numerics_size ; i ++ ) 
 	{
 		float2 range = ranges[i];

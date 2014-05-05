@@ -1,3 +1,5 @@
+#pragma OPENCL EXTENSION cl_amd_printf : enable
+
 /* Sort elements within a vector */
 #define VECTOR_SORT(input, dir, indices)                          \
    comp = input < shuffle(input, mask2) ^ dir;                    \
@@ -35,6 +37,8 @@ __kernel void bsort_init(__global float4 *g_data,  __local float4 *l_data, __glo
    int4 add1 = (int4)(1, 1, 3, 3);
    int4 add2 = (int4)(2, 3, 2, 3);
    int4 add3 = (int4)(1, 2, 2, 3);
+   
+   int gid = get_global_id(0) * 8;
 
    id = get_local_id(0) * 2;
    global_start = get_group_id(0) * get_local_size(0) * 2 + id;
@@ -42,8 +46,14 @@ __kernel void bsort_init(__global float4 *g_data,  __local float4 *l_data, __glo
    input1 = g_data[global_start]; 
    input2 = g_data[global_start+1];
    
-   indices1 = g_indices[ global_start];
-   indices2 = g_indices[ global_start +1];
+   //indices1 = g_indices[ global_start ];
+   //indices2 = g_indices[ global_start +1];
+   
+   indices1 = (int4)( gid, gid + 1, gid + 2 , gid +3); 
+   indices2 = (int4)( gid+4, gid + 5, gid +6, gid +7);
+   
+   //printf(" global_di %d, indice %d, %d\n", get_global_id(0), global_start);
+   
 
    /* Sort input 1 - ascending */
    comp = input1 < shuffle(input1, mask1);
