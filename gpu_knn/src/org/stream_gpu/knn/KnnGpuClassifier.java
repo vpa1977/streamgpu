@@ -1,9 +1,7 @@
 package org.stream_gpu.knn;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.InputStreamReader;
-import java.util.Arrays;
 
 import moa.classifiers.AbstractClassifier;
 import moa.core.Measurement;
@@ -18,10 +16,7 @@ import weka.core.Utils;
 import com.nativelibs4java.opencl.CLBuffer;
 import com.nativelibs4java.opencl.CLContext;
 import com.nativelibs4java.opencl.CLEvent;
-import com.nativelibs4java.opencl.CLKernel;
 import com.nativelibs4java.opencl.CLMem;
-import com.nativelibs4java.opencl.CLMem.MapFlags;
-import com.nativelibs4java.opencl.CLMem.Usage;
 import com.nativelibs4java.opencl.CLQueue;
 
 public class KnnGpuClassifier extends  AbstractClassifier {
@@ -40,16 +35,12 @@ public class KnnGpuClassifier extends  AbstractClassifier {
     private CLQueue m_calc_queue;
     private CLContext m_cl_context;
     private CLEvent m_last_event;
-    private CLKernel m_distance_kernel;
-    private CLBuffer<Float> m_output;
-    private CLBuffer<Float> m_input;
-    private CLBuffer<Float> m_ranges;
     private int m_window_size;
     private int m_num_classes;
-	private int m_num_attributes;
 	private int m_class_type;
 	
 	
+	private IDistance m_distance;
 	private BitonicSort m_sorter;
 	private int m_num_attributes_used;
 	private int m_distance_weighting;
@@ -66,14 +57,6 @@ public class KnnGpuClassifier extends  AbstractClassifier {
     	m_cl_context = cl_context;
     	m_data_transfer_queue = m_cl_context.createDefaultQueue();
     	m_calc_queue = m_cl_context.createDefaultQueue();
-    	
-    	String source = null;
-    	
-    	try {
-    		source = readKernel("distance.cl");
-    	} catch (Exception e){ e.printStackTrace();}
-		m_distance_kernel = m_cl_context.createProgram(source).createKernel("square_distance");
-		m_sorter = new BitonicSort(cl_context, m_window_size); 
 		m_distance_weighting = WEIGHT_NONE;
     }
     
@@ -159,13 +142,11 @@ public class KnnGpuClassifier extends  AbstractClassifier {
     private void buildClassifier( Instances instances)
     {
 		m_num_classes = instances.numClasses();
-		m_num_attributes = instances.numAttributes();
 		m_class_type = instances.classAttribute().type();
 		
 		m_window = new SlidingWindow(m_cl_context, m_window_size, instances);
-		m_output = m_cl_context.createBuffer(Usage.InputOutput,Float.class, m_window.getWindowSize());
-		m_input = m_cl_context.createBuffer(Usage.Input, Float.class, m_window.getInstanceSize());
-		m_ranges = m_cl_context.createBuffer(Usage.Input, Float.class, m_window.getRangesSize());
+		m_distance = new Distance(m_window, m_calc_queue, m_cl_context);
+		m_sorter = new BitonicSort(m_cl_context, m_window_size); 
 		m_num_attributes_used = 0;
         for (int i = 0; i < instances.numAttributes(); i++) {
           if ((i != instances.classIndex()) && 
@@ -207,25 +188,7 @@ public class KnnGpuClassifier extends  AbstractClassifier {
     {
     	if (m_window == null)
     		throw new IllegalArgumentException();
-    	
-    	CLEvent input_ready = m_window.storeTargetInstance(m_calc_queue, inst,  m_input, m_ranges);
-    	
-		m_distance_kernel.setArgs(
-						 m_input,
-						 m_window.getBuffer(),
-						 m_ranges,
-						 m_output, 
-						 m_window.getInstanceSize(), 
-						 m_window.numericsSize(), 
-						 m_window.nominalsSize());
-
-    	CLEvent distance_done = m_distance_kernel.enqueueNDRange(m_calc_queue,
-    			 			null, // offsets
-    						new long[] { m_window.getWindowSize() }, // global sizes 
-    						null, // local sizes
-    			 new CLEvent[]{ m_last_event , input_ready} ); 
-		m_calc_queue.finish();
-		return m_output;
+		return m_distance.distance(inst,m_last_event);
     }
 
 

@@ -16,9 +16,6 @@ __kernel void square_distance(__global const float* input,
 	float point_distance = 0;
 	float val;
 	float width;
-	
-	
-	
 	for (int i = 0; i < numerics_size ; i ++ ) 
 	{
 		float2 range = ranges[i];
@@ -27,7 +24,7 @@ __kernel void square_distance(__global const float* input,
 		point_distance += val*val; 
 	}
 	
-	for (int i = numerics_size; i < element_count; i ++ ) 
+	for (int i = nominal_size; i < element_count; i ++ ) 
 	{
 		point_distance += isnotequal( input[i] , samples[vector_offset + i]);
 	}

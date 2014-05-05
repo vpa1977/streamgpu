@@ -20,10 +20,10 @@ public class DualTest {
 	public static void main(String[] args) {
 		
 		int k = 32;
-		int window = 8192*8;
+		int window = 1024;
 		
 		int test_size  = 1000;
-		int train_size = 8192*8 * 8;
+		int train_size = 1000000;
 		
 		
 		
