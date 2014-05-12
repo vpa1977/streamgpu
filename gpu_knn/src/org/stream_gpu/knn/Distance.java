@@ -1,7 +1,5 @@
 package org.stream_gpu.knn;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 
 import weka.core.Instance;
 
@@ -31,7 +29,7 @@ public class Distance implements IDistance {
     	String source = null;
     	
     	try {
-    		source = readKernel("distance.cl");
+    		source = KernelLoader.readKernel("distance.cl");
     	} catch (Exception e){ e.printStackTrace();}
 		m_distance_kernel = cl_context.createProgram(source).createKernel("square_distance");
 
@@ -65,16 +63,5 @@ public class Distance implements IDistance {
 			m_calc_queue.finish();
 			return m_output;
 	    }
-	 
-		private static String readKernel(String name) throws Exception {
-			BufferedReader r = new BufferedReader(new InputStreamReader(KnnGpuClassifier.class.getResourceAsStream(name)));
-			String output = "";
-			String line;
-			while ((line = r.readLine()) != null)
-				output += line + "\n";
-			r.close();
-			return output;
-
-		}
 
 }
