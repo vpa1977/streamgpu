@@ -1,0 +1,847 @@
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x000000005a868936, pid=7116, tid=5992
+#
+# JRE version: Java(TM) SE Runtime Environment (7.0_51-b13) (build 1.7.0_51-b13)
+# Java VM: Java HotSpot(TM) 64-Bit Server VM (24.51-b03 mixed mode windows-amd64 compressed oops)
+# Problematic frame:
+# V  [jvm.dll+0x1e8936]
+#
+# Failed to write core dump. Minidumps are not enabled by default on client versions of Windows
+#
+# If you would like to submit a bug report, please visit:
+#   http://bugreport.sun.com/bugreport/crash.jsp
+#
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x000000000b3dd000):  VMThread [stack: 0x000000000d1e0000,0x000000000d2e0000] [id=5992]
+
+siginfo: ExceptionCode=0xc0000005, reading address 0x000000000000000a
+
+Registers:
+RAX=0x0000000000000000, RBX=0x000000000d2dedf0, RCX=0x000000000d2dedf0, RDX=0x0000000000000028
+RSP=0x000000000d2deb20, RBP=0x0000000000000006, RSI=0x0000000000000000, RDI=0x000000000d2df470
+R8 =0x0000000000000000, R9 =0x0000000000000000, R10=0x000000077c59def0, R11=0x000000005abfb6c8
+R12=0x00000000000000f0, R13=0x000000000b3dd001, R14=0x0000000000000000, R15=0x6666666666666667
+RIP=0x000000005a868936, EFLAGS=0x0000000000010202
+
+Top of Stack: (sp=0x000000000d2deb20)
+0x000000000d2deb20:   000000077c38e300 000000000c411c70
+0x000000000d2deb30:   000000000c4122a0 000000000e65ed70
+0x000000000d2deb40:   000000077c52d678 000000000b201300
+0x000000000d2deb50:   000000077c399c48 000000070000004e
+0x000000000d2deb60:   000000000266f2e8 000000000266f2e8
+0x000000000d2deb70:   000000077c220500 000000000c411c70
+0x000000000d2deb80:   000000000c4122f0 000000000e65ed70
+0x000000000d2deb90:   000000077bec4ea8 0000000a00000001
+0x000000000d2deba0:   0000000000000000 000000077c350700
+0x000000000d2debb0:   000000000c412360 000000000c1c54a0
+0x000000000d2debc0:   0000000000000000 0000000000000000
+0x000000000d2debd0:   0000000000000000 0000000000000000
+0x000000000d2debe0:   0000000000000000 0000000000000000
+0x000000000d2debf0:   0000000000000000 0000000000000000
+0x000000000d2dec00:   0000000000000000 000000000b201300
+0x000000000d2dec10:   000000077c2713a0 000000070000004f 
+
+Instructions: (pc=0x000000005a868936)
+0x000000005a868916:   01 00 00 48 8b 05 c0 3f 54 00 48 33 c4 48 89 84
+0x000000005a868926:   24 30 01 00 00 4c 63 41 10 48 8b 41 08 48 8b d9
+0x000000005a868936:   42 38 54 00 0a 74 33 44 0f be c2 48 8d 4c 24 20
+0x000000005a868946:   48 8d 15 a3 83 3a 00 e8 9e 52 e3 ff 48 8d 0d 37 
+
+
+Register to memory mapping:
+
+RAX=0x0000000000000000 is an unknown value
+RBX=0x000000000d2dedf0 is an unknown value
+RCX=0x000000000d2dedf0 is an unknown value
+RDX=0x0000000000000028 is an unknown value
+RSP=0x000000000d2deb20 is an unknown value
+RBP=0x0000000000000006 is an unknown value
+RSI=0x0000000000000000 is an unknown value
+RDI=0x000000000d2df470 is an unknown value
+R8 =0x0000000000000000 is an unknown value
+R9 =0x0000000000000000 is an unknown value
+R10=0x000000077c59def0 is an oop
+{constant pool} 
+ - klass: {other class}
+ - holder: 0x000000077c0a9658
+ - cache: 0x000000077c59ef20
+ -   1 :  : 'org/stream_gpu/knn/KnnGpuClassifier'
+ -   2 :  : 'org/stream_gpu/knn/KnnGpuClassifier'
+ -   3 :  : 'moa/classifiers/AbstractClassifier'
+ -   4 :  : 'moa/classifiers/AbstractClassifier'
+ -   5 :  : 'serialVersionUID'
+ -   6 :  : 'J'
+ -   7 :  : 'ConstantValue'
+ -   8 :  : 1
+ -  10 :  : 'WEIGHT_NONE'
+ -  11 :  : 'I'
+ -  12 :  : 1
+ -  13 :  : 'WEIGHT_INVERSE'
+ -  14 :  : 2
+ -  15 :  : 'WEIGHT_SIMILARITY'
+ -  16 :  : 4
+ -  17 :  : 'm_window'
+ -  18 :  : 'Lorg/stream_gpu/knn/HostWindow;'
+ -  19 :  : 'm_k'
+ -  20 :  : 'm_data_transfer_queue'
+ -  21 :  : 'Lcom/nativelibs4java/opencl/CLQueue;'
+ -  22 :  : 'm_calc_queue'
+ -  23 :  : 'm_cl_context'
+ -  24 :  : 'Lcom/nativelibs4java/opencl/CLContext;'
+ -  25 :  : 'm_last_event'
+ -  26 :  : 'Lcom/nativelibs4java/opencl/CLEvent;'
+ -  27 :  : 'm_distance_kernel'
+ -  28 :  : 'Lcom/nativelibs4java/opencl/CLKernel;'
+ -  29 :  : 'm_output'
+ -  30 :  : 'Lcom/nativelibs4java/opencl/CLBuffer;'
+ -  31 :  : 'Signature'
+ -  32 :  : 'Lcom/nativelibs4java/opencl/CLBuffer<Ljava/lang/Float;>;'
+ -  33 :  : 'm_input'
+ -  34 :  : 'm_window_size'
+ -  35 :  : 'm_num_classes'
+ -  36 :  : 'm_num_attributes'
+ -  37 :  : 'm_class_type'
+ -  38 :  : 'm_indices'
+ -  39 :  : '[I'
+ -  40 :  : 'm_sorter'
+ -  41 :  : 'Lorg/stream_gpu/knn/BitonicSort;'
+ -  42 :  : 'm_num_attributes_used'
+ -  43 :  : 'm_distance_weighting'
+ -  44 :  : 'getPurposeString'
+ -  45 :  : '()Ljava/lang/String;'
+ -  46 :  : 'Code'
+ -  47 :  : "kNN GPU initial implementation" {0x81070db8}
+ -  48 :  : 'kNN GPU initial implementation'
+ -  49 :  : 'LineNumberTable'
+ -  50 :  : 'LocalVariableTable'
+ -  51 :  : 'this'
+ -  52 :  : 'Lorg/stream_gpu/knn/KnnGpuClassifier;'
+ -  53 :  : '<init>'
+ -  54 :  : '(Lcom/nativelibs4java/opencl/CLContext;II)V'
+ -  55 :  : klass_index=3 name_and_type_index=56
+ -  56 :  : name_index=53 signature_index=57
+ -  57 :  : '()V'
+ -  58 :  : klass_index=1 name_and_type_index=59
+ -  59 :  : name_index=19 signature_index=11
+ -  60 :  : klass_index=1 name_and_type_index=61
+ -  61 :  : name_index=34 signature_index=11
+ -  62 :  : klass_index=1 name_and_type_index=63
+ -  63 :  : name_index=23 signature_index=24
+ -  64 :  : 'com/nativelibs4java/opencl/CLDevice$QueueProperties'
+ -  65 :  : 'com/nativelibs4java/opencl/CLDevice$QueueProperties'
+ -  66 :  : klass_index=67 name_and_type_index=69
+ -  67 :  : 'com/nativelibs4java/opencl/CLContext'
+ -  68 :  : 'com/nativelibs4java/opencl/CLContext'
+ -  69 :  : name_index=70 signature_index=71
+ -  70 :  : 'createDefaultQueue'
+ -  71 :  : '([Lcom/nativelibs4java/opencl/CLDevice$QueueProperties;)Lcom/nativelibs4java/opencl/CLQueue;'
+ -  72 :  : klass_index=1 name_and_type_index=73
+ -  73 :  : name_index=20 signature_index=21
+ -  74 :  : klass_index=1 name_and_type_index=75
+ -  75 :  : name_index=22 signature_index=21
+ -  76 :  : "distance.cl" {0x81146458}
+ -  77 :  : 'distance.cl'
+ -  78 :  : klass_index=1 name_and_type_index=79
+ -  79 :  : name_index=80 signature_index=81
+ -  80 :  : 'readKernel'
+ -  81 :  : '(Ljava/lang/String;)Ljava/lang/String;'
+ -  82 :  : klass_index=83 name_and_type_index=85
+ -  83 :  : 'java/lang/Exception'
+ -  84 :  : 'java/lang/Exception'
+ -  85 :  : name_index=86 signature_index=57
+ -  86 :  : 'printStackTrace'
+ -  87 :  : 'java/lang/String'
+ -  88 :  : 'java/lang/String'
+ -  89 :  : klass_index=67 name_and_type_index=90
+ -  90 :  : name_index=91 signature_index=92
+ -  91 :  : 'createProgram'
+ -  92 :  : '([Ljava/lang/String;)Lcom/nativelibs4java/opencl/CLProgram;'
+ -  93 :  : "square_distance" {0x81045908}
+ -  94 :  : 'square_distance'
+ -  95 :  : 'java/lang/Object'
+ -  96 :  : 'java/lang/Object'
+ -  97 :  : klass_index=98 name_and_type_index=100
+ -  98 :  : 'com/nativelibs4java/opencl/CLProgram'
+ -  99 :  : 'com/nativelibs4java/opencl/CLProgram'
+ - 100 :  : name_index=101 signature_index=102
+ - 101 :  : 'createKernel'
+ - 102 :  : '(Ljava/lang/String;[Ljava/lang/Object;)Lcom/nativelibs4java/opencl/CLKernel;'
+ - 103 :  : klass_index=1 name_and_type_index=104
+ - 104 :  : name_index=27 signature_index=28
+ - 105 :  : 'org/stream_gpu/knn/BitonicSort'
+ - 106 :  : 'org/stream_gpu/knn/BitonicSort'
+ - 107 :  : klass_index=105 name_and_type_index=108
+ - 108 :  : name_index=53 signature_index=109
+ - 109 :  : '(Lcom/nativelibs4java/opencl/CLContext;I)V'
+ - 110 :  : klass_index=1 name_and_type_index=111
+ - 111 :  : name_index=40 signature_index=41
+ - 112 :  : klass_index=1 name_and_type_index=113
+ - 113 :  : name_index=38 signature_index=39
+ - 114 :  : klass_index=1 name_and_type_index=115
+ - 115 :  : name_index=43 signature_index=11
+ - 116 :  : 'cl_context'
+ - 117 :  : 'window_size'
+ - 118 :  : 'k'
+ - 119 :  : 'source'
+ - 120 :  : 'Ljava/lang/String;'
+ - 121 :  : 'e'
+ - 122 :  : 'Ljava/lang/Exception;'
+ - 123 :  : 'i'
+ - 124 :  : 'StackMapTable'
+ - 125 :  : 'resetLearningImpl'
+ - 126 :  : klass_index=1 name_and_type_index=127
+ - 127 :  : name_index=17 signature_index=18
+ - 128 :  : klass_index=129 name_and_type_index=131
+ - 129 :  : 'org/stream_gpu/knn/HostWindow'
+ - 130 :  : 'org/stream_gpu/knn/HostWindow'
+ - 131 :  : name_index=132 signature_index=133
+ - 132 :  : 'close'
+ - 133 :  : '(Lcom/nativelibs4java/opencl/CLQueue;)V'
+ - 134 :  : 'makeDistribution'
+ - 135 :  : '([I[F)[D'
+ - 136 :  : 'Exceptions'
+ - 137 :  : klass_index=1 name_and_type_index=138
+ - 138 :  : name_index=35 signature_index=11
+ - 139 :  : klass_index=1 name_and_type_index=140
+ - 140 :  : name_index=37 signature_index=11
+ - 141 :  : klass_index=142 name_and_type_index=144
+ - 142 :  : 'java/lang/Math'
+ - 143 :  : 'java/lang/Math'
+ - 144 :  : name_index=145 signature_index=146
+ - 145 :  : 'max'
+ - 146 :  : '(II)I'
+ - 147 :  : klass_index=129 name_and_type_index=148
+ - 148 :  : name_index=149 signature_index=150
+ - 149 :  : 'instances'
+ - 150 :  : '()[Lweka/core/Instance;'
+ - 151 :  : klass_index=1 name_and_type_index=152
+ - 152 :  : name_index=42 signature_index=11
+ - 153 :  : klass_index=142 name_and_type_index=154
+ - 154 :  : name_index=155 signature_index=156
+ - 155 :  : 'sqrt'
+ - 156 :  : '(D)D'
+ - 157 :  : 0.001000
+ - 159 :  : klass_index=160 name_and_type_index=162
+ - 160 :  : 'weka/core/Instance'
+ - 161 :  : 'weka/core/Instance'
+ - 162 :  : name_index=163 signature_index=164
+ - 163 :  : 'weight'
+ - 164 :  : '()D'
+ - 165 :  : klass_index=160 name_and_type_index=166
+ - 166 :  : name_index=167 signature_index=164
+ - 167 :  : 'classValue'
+ - 168 :  : 'java/lang/Error'
+ - 169 :  : 'java/lang/Error'
+ - 170 :  : "Data has no class attribute!" {0x81146498}
+ - 171 :  : 'Data has no class attribute!'
+ - 172 :  : klass_index=168 name_and_type_index=173
+ - 173 :  : name_index=53 signature_index=174
+ - 174 :  : '(Ljava/lang/String;)V'
+ - 175 :  : klass_index=176 name_and_type_index=178
+ - 176 :  : 'weka/core/Utils'
+ - 177 :  : 'weka/core/Utils'
+ - 178 :  : name_index=179 signature_index=180
+ - 179 :  : 'normalize'
+ - 180 :  : '([DD)V'
+ - 181 :  : 'indices'
+ - 182 :  : 'distances'
+ - 183 :  : '[F'
+ - 184 :  : 'total'
+ - 185 :  : 'D'
+ - 186 :  : 'distribution'
+ - 187 :  : '[D'
+ - 188 :  : 'current'
+ - 189 :  : 'Lweka/core/Instance;'
+ - 190 :  : 'ex'
+ - 191 :  : '[I'
+ - 192 :  : '[F'
+ - 193 :  : '[D'
+ - 194 :  : 'buildClassifier'
+ - 195 :  : '(Lweka/core/Instances;)V'
+ - 196 :  : klass_index=197 name_and_type_index=199
+ - 197 :  : 'weka/core/Instances'
+ - 198 :  : 'weka/core/Instances'
+ - 199 :  : name_index=200 signature_index=201
+ - 200 :  : 'numClasses'
+ - 201 :  : '()I'
+ - 202 :  : klass_index=197 name_and_type_index=203
+ - 203 :  : name_index=204 signature_index=201
+ - 204 :  : 'numAttributes'
+ - 205 :  : klass_index=1 name_and_type_index=206
+ - 206 :  : name_index=36 signature_index=11
+ - 207 :  : klass_index=197 name_and_type_index=208
+ - 208 :  : name_index=209 signature_index=210
+ - 209 :  : 'classAttribute'
+ - 210 :  : '()Lweka/core/Attribute;'
+ - 211 :  : klass_index=212 name_and_type_index=214
+ - 212 :  : 'weka/core/Attribute'
+ - 213 :  : 'weka/core/Attribute'
+ - 214 :  : name_index=215 signature_index=201
+ - 215 :  : 'type'
+ - 216 :  : klass_index=129 name_and_type_index=217
+ - 217 :  : name_index=53 signature_index=54
+ - 218 :  : klass_index=219 name_and_type_index=221
+ - 219 :  : 'com/nativelibs4java/opencl/CLMem$Usage'
+ - 220 :  : 'com/nativelibs4java/opencl/CLMem$Usage'
+ - 221 :  : name_index=222 signature_index=223
+ - 222 :  : 'InputOutput'
+ - 223 :  : 'Lcom/nativelibs4java/opencl/CLMem$Usage;'
+ - 224 :  : 'java/lang/Float'
+ - 225 :  : 'java/lang/Float'
+ - 226 :  : klass_index=129 name_and_type_index=227
+ - 227 :  : name_index=228 signature_index=201
+ - 228 :  : 'getWindowSize'
+ - 229 :  : klass_index=67 name_and_type_index=230
+ - 230 :  : name_index=231 signature_index=232
+ - 231 :  : 'createBuffer'
+ - 232 :  : '(Lcom/nativelibs4java/opencl/CLMem$Usage;Ljava/lang/Class;J)Lcom/nativelibs4java/opencl/CLBuffer;'
+ - 233 :  : klass_index=1 name_and_type_index=234
+ - 234 :  : name_index=29 signature_index=30
+ - 235 :  : klass_index=219 name_and_type_index=236
+ - 236 :  : name_index=237 signature_index=223
+ - 237 :  : 'Input'
+ - 238 :  : klass_index=129 name_and_type_index=239
+ - 239 :  : name_index=240 signature_index=201
+ - 240 :  : 'getInstanceSize'
+ - 241 :  : klass_index=1 name_and_type_index=242
+ - 242 :  : name_index=33 signature_index=30
+ - 243 :  : klass_index=197 name_and_type_index=244
+ - 244 :  : name_index=245 signature_index=201
+ - 245 :  : 'classIndex'
+ - 246 :  : klass_index=197 name_and_type_index=247
+ - 247 :  : name_index=248 signature_index=249
+ - 248 :  : 'attribute'
+ - 249 :  : '(I)Lweka/core/Attribute;'
+ - 250 :  : klass_index=212 name_and_type_index=251
+ - 251 :  : name_index=252 signature_index=253
+ - 252 :  : 'isNominal'
+ - 253 :  : '()Z'
+ - 254 :  : klass_index=212 name_and_type_index=255
+ - 255 :  : name_index=256 signature_index=253
+ - 256 :  : 'isNumeric'
+ - 257 :  : 'Lweka/core/Instances;'
+ - 258 :  : 'trainOnInstanceImpl'
+ - 259 :  : '(Lweka/core/Instance;)V'
+ - 260 :  : klass_index=160 name_and_type_index=261
+ - 261 :  : name_index=262 signature_index=263
+ - 262 :  : 'toDoubleArray'
+ - 263 :  : '()[D'
+ - 264 :  : klass_index=160 name_and_type_index=265
+ - 265 :  : name_index=266 signature_index=267
+ - 266 :  : 'dataset'
+ - 267 :  : '()Lweka/core/Instances;'
+ - 268 :  : klass_index=1 name_and_type_index=269
+ - 269 :  : name_index=194 signature_index=195
+ - 270 :  : klass_index=160 name_and_type_index=244
+ - 271 :  : klass_index=129 name_and_type_index=272
+ - 272 :  : name_index=273 signature_index=274
+ - 273 :  : 'addInstance'
+ - 274 :  : '(Lcom/nativelibs4java/opencl/CLQueue;Lweka/core/Instance;[F)Lcom/nativelibs4java/opencl/CLEvent;'
+ - 275 :  : klass_index=1 name_and_type_index=276
+ - 276 :  : name_index=25 signature_index=26
+ - 277 :  : 'inst'
+ - 278 :  : 'values'
+ - 279 :  : 'offset'
+ - 280 :  : 'array'
+ - 281 :  : 'getVotesForInstance'
+ - 282 :  : '(Lweka/core/Instance;)[D'
+ - 283 :  : klass_index=1 name_and_type_index=284
+ - 284 :  : name_index=285 signature_index=286
+ - 285 :  : 'distance'
+ - 286 :  : '(Lweka/core/Instance;)[F'
+ - 287 :  : klass_index=288 name_and_type_index=290
+ - 288 :  : 'java/lang/System'
+ - 289 :  : 'java/lang/System'
+ - 290 :  : name_index=291 signature_index=292
+ - 291 :  : 'arraycopy'
+ - 292 :  : '(Ljava/lang/Object;ILjava/lang/Object;II)V'
+ - 293 :  : klass_index=105 name_and_type_index=294
+ - 294 :  : name_index=295 signature_index=296
+ - 295 :  : 'sort'
+ - 296 :  : '([F[I)[F'
+ - 297 :  : klass_index=1 name_and_type_index=298
+ - 298 :  : name_index=134 signature_index=135
+ - 299 :  : 'dists'
+ - 300 :  : 'java/lang/IllegalArgumentException'
+ - 301 :  : 'java/lang/IllegalArgumentException'
+ - 302 :  : klass_index=300 name_and_type_index=56
+ - 303 :  : klass_index=1 name_and_type_index=304
+ - 304 :  : name_index=305 signature_index=306
+ - 305 :  : 'transferInstance'
+ - 306 :  : '(Lweka/core/Instance;Lcom/nativelibs4java/opencl/CLBuffer;)Lcom/nativelibs4java/opencl/CLEvent;'
+ - 307 :  : klass_index=129 name_and_type_index=308
+ - 308 :  : name_index=309 signature_index=310
+ - 309 :  : 'getBuffer'
+ - 310 :  : '()Lcom/nativelibs4java/opencl/CLBuffer;'
+ - 311 :  : klass_index=312 name_and_type_index=314
+ - 312 :  : 'java/lang/Integer'
+ - 313 :  : 'java/lang/Integer'
+ - 314 :  : name_index=315 signature_index=316
+ - 315 :  : 'valueOf'
+ - 316 :  : '(I)Ljava/lang/Integer;'
+ - 317 :  : klass_index=318 name_and_type_index=320
+ - 318 :  : 'com/nativelibs4java/opencl/CLKernel'
+ - 319 :  : 'com/nativelibs4java/opencl/CLKernel'
+ - 320 :  : name_index=321 signature_index=322
+ - 321 :  : 'setArgs'
+ - 322 :  : '([Ljava/lang/Object;)V'
+ - 323 :  : 'com/nativelibs4java/opencl/CLEvent'
+ - 324 :  : 'com/nativelibs4java/opencl/CLEvent'
+ - 325 :  : klass_index=318 name_and_type_index=326
+ - 326 :  : name_index=327 signature_index=328
+ - 327 :  : 'enqueueNDRange'
+ - 328 :  : '(Lcom/nativelibs4java/opencl/CLQueue;[J[J[J[Lcom/nativelibs4java/opencl/CLEvent;)Lcom/nativelibs4java/opencl/CLEvent;'
+ - 329 :  : klass_index=330 name_and_type_index=332
+ - 330 :  : 'com/nativelibs4java/opencl/CLMem$MapFlags'
+ - 331 :  : 'com/nativelibs4java/opencl/CLMem$MapFlags'
+ - 332 :  : name_index=333 signature_index=334
+ - 333 :  : 'Read'
+ - 334 :  : 'Lcom/nativelibs4java/opencl/CLMem$MapFlags;'
+ - 335 :  : klass_index=336 name_and_type_index=338
+ - 336 :  : 'com/nativelibs4java/opencl/CLBuffer'
+ - 337 :  : 'com/nativelibs4java/opencl/CLBuffer'
+ - 338 :  : name_index=339 signature_index=340
+ - 339 :  : 'map'
+ - 340 :  : '(Lcom/nativelibs4java/opencl/CLQueue;Lcom/nativelibs4java/opencl/CLMem$MapFlags;[Lcom/nativelibs4java/opencl/CLEvent;)Lorg/bridj/Pointer;'
+ - 341 :  : klass_index=342 name_and_type_index=344
+ - 342 :  : 'org/bridj/Pointer'
+ - 343 :  : 'org/bridj/Pointer'
+ - 344 :  : name_index=345 signature_index=346
+ - 345 :  : 'getFloats'
+ - 346 :  : '()[F'
+ - 347 :  : klass_index=336 name_and_type_index=348
+ - 348 :  : name_index=349 signature_index=350
+ - 349 :  : 'unmap'
+ - 350 :  : '(Lcom/nativelibs4java/opencl/CLQueue;Lorg/bridj/Pointer;[Lcom/nativelibs4java/opencl/CLEvent;)Lcom/nativelibs4java/opencl/CLEvent;'
+ - 351 :  : klass_index=352 name_and_type_index=354
+ - 352 :  : 'com/nativelibs4java/opencl/CLQueue'
+ - 353 :  : 'com/nativelibs4java/opencl/CLQueue'
+ - 354 :  : name_index=355 signature_index=57
+ - 355 :  : 'finish'
+ - 356 :  : 'input_ready'
+ - 357 :  : 'distance_done'
+ - 358 :  : 'result'
+ - 359 :  : 'Lorg/bridj/Pointer;'
+ - 360 :  : 'result_array'
+ - 361 :  : 'LocalVariableTypeTable'
+ - 362 :  : 'Lorg/bridj/Pointer<Ljava/lang/Float;>;'
+ - 363 :  : '(Lweka/core/Instance;Lcom/nativelibs4java/opencl/CLBuffer<Ljava/lang/Float;>;)Lcom/nativelibs4java/opencl/CLEvent;'
+ - 364 :  : klass_index=330 name_and_type_index=365
+ - 365 :  : name_index=366 signature_index=334
+ - 366 :  : 'Write'
+ - 367 :  : klass_index=342 name_and_type_index=368
+ - 368 :  : name_index=369 signature_index=370
+ - 369 :  : 'setFloats'
+ - 370 :  : '([F)Lorg/bridj/Pointer;'
+ - 371 :  : 'buffer'
+ - 372 :  : 'data'
+ - 373 :  : 'getModelMeasurementsImpl'
+ - 374 :  : '()[Lmoa/core/Measurement;'
+ - 375 :  : 'getModelDescription'
+ - 376 :  : '(Ljava/lang/StringBuilder;I)V'
+ - 377 :  : 'out'
+ - 378 :  : 'Ljava/lang/StringBuilder;'
+ - 379 :  : 'indent'
+ - 380 :  : 'isRandomizable'
+ - 381 :  : 'manageMemory'
+ - 382 :  : '(II)V'
+ - 383 :  : 'currentByteSize'
+ - 384 :  : 'maxByteSize'
+ - 385 :  : 'java/io/BufferedReader'
+ - 386 :  : 'java/io/BufferedReader'
+ - 387 :  : 'java/io/InputStreamReader'
+ - 388 :  : 'java/io/InputStreamReader'
+ - 389 :  : klass_index=390 name_and_type_index=392
+ - 390 :  : 'java/lang/Class'
+ - 391 :  : 'java/lang/Class'
+ - 392 :  : name_index=393 signature_index=394
+ - 393 :  : 'getResourceAsStream'
+ - 394 :  : '(Ljava/lang/String;)Ljava/io/InputStream;'
+ - 395 :  : klass_index=387 name_and_type_index=396
+ - 396 :  : name_index=53 signature_index=397
+ - 397 :  : '(Ljava/io/InputStream;)V'
+ - 398 :  : klass_index=385 name_and_type_index=399
+ - 399 :  : name_index=53 signature_index=400
+ - 400 :  : '(Ljava/io/Reader;)V'
+ - 401 :  : "" {0x8100a708}
+ - 402 :  : ''
+ - 403 :  : 'java/lang/StringBuilder'
+ - 404 :  : 'java/lang/StringBuilder'
+ - 405 :  : klass_index=87 name_and_type_index=406
+ - 406 :  : name_index=315 signature_index=407
+ - 407 :  : '(Ljava/lang/Object;)Ljava/lang/String;'
+ - 408 :  : klass_index=403 name_and_type_index=173
+ - 409 :  : klass_index=403 name_and_type_index=410
+ - 410 :  : name_index=411 signature_index=412
+ - 411 :  : 'append'
+ - 412 :  : '(Ljava/lang/String;)Ljava/lang/StringBuilder;'
+ - 413 :  : "
+" {0x811464f8}
+ - 414 :  : '
+'
+ - 415 :  : klass_index=403 name_and_type_index=416
+ - 416 :  : name_index=417 signature_index=45
+ - 417 :  : 'toString'
+ - 418 :  : klass_index=385 name_and_type_index=419
+ - 419 :  : name_index=420 signature_index=45
+ - 420 :  : 'readLine'
+ - 421 :  : klass_index=385 name_and_type_index=422
+ - 422 :  : name_index=132 signature_index=57
+ - 423 :  : 'name'
+ - 424 :  : 'r'
+ - 425 :  : 'Ljava/io/BufferedReader;'
+ - 426 :  : 'output'
+ - 427 :  : 'line'
+ - 428 :  : 'SourceFile'
+ - 429 :  : 'KnnGpuClassifier.java'
+ - 430 :  : 'InnerClasses'
+ - 431 :  : 'com/nativelibs4java/opencl/CLDevice'
+ - 432 :  : 'com/nativelibs4java/opencl/CLDevice'
+ - 433 :  : 'QueueProperties'
+ - 434 :  : 'com/nativelibs4java/opencl/CLMem'
+ - 435 :  : 'com/nativelibs4java/opencl/CLMem'
+ - 436 :  : 'MapFlags'
+ - 437 :  : 'Usage'
+ - 438 :  : 'Ljava/io/PrintStream;'
+ - 439 :  : name_index=377 signature_index=438
+ - 440 :  : klass_index=288 name_and_type_index=439
+ - 441 :  : "," {0x8106ee70}
+ - 442 :  : ','
+ - 443 :  : '(D)Ljava/lang/StringBuilder;'
+ - 444 :  : name_index=411 signature_index=443
+ - 445 :  : klass_index=403 name_and_type_index=444
+ - 446 :  : 'java/io/PrintStream'
+ - 447 :  : 'print'
+ - 448 :  : name_index=447 signature_index=174
+ - 449 :  : klass_index=446 name_and_type_index=448
+ - 450 :  : 'java/io/PrintStream'
+
+R11=0x000000005abfb6c8 is an unknown value
+R12=0x00000000000000f0 is an unknown value
+R13=0x000000000b3dd001 is an unknown value
+R14=0x0000000000000000 is an unknown value
+R15=0x6666666666666667 is an unknown value
+
+
+Stack: [0x000000000d1e0000,0x000000000d2e0000],  sp=0x000000000d2deb20,  free space=1018k
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [jvm.dll+0x1e8936]
+
+VM_Operation (0x000000000e65f290): GetOrSetLocal, mode: safepoint, requested by thread 0x000000000c165800
+
+
+---------------  P R O C E S S  ---------------
+
+Java Threads: ( => current thread )
+  0x000000000c194800 JavaThread "Service Thread" daemon [_thread_blocked, id=6976, stack(0x000000000ed20000,0x000000000ee20000)]
+  0x000000000c194000 JavaThread "C2 CompilerThread1" daemon [_thread_blocked, id=7012, stack(0x000000000e2c0000,0x000000000e3c0000)]
+  0x000000000c186000 JavaThread "C2 CompilerThread0" daemon [_thread_blocked, id=7868, stack(0x000000000ea90000,0x000000000eb90000)]
+  0x000000000c175000 JavaThread "JDWP Command Reader" daemon [_thread_in_native, id=5720, stack(0x000000000e890000,0x000000000e990000)]
+  0x000000000c174000 JavaThread "JDWP Event Helper Thread" daemon [_thread_blocked, id=7896, stack(0x000000000e730000,0x000000000e830000)]
+  0x000000000c165800 JavaThread "JDWP Transport Listener: dt_socket" daemon [_thread_blocked, id=4008, stack(0x000000000e560000,0x000000000e660000)]
+  0x000000000b3f7000 JavaThread "Attach Listener" daemon [_thread_blocked, id=3628, stack(0x000000000d740000,0x000000000d840000)]
+  0x000000000b3f6000 JavaThread "Signal Dispatcher" daemon [_thread_blocked, id=7776, stack(0x000000000d4b0000,0x000000000d5b0000)]
+  0x00000000022ad800 JavaThread "Finalizer" daemon [_thread_blocked, id=5668, stack(0x000000000d5f0000,0x000000000d6f0000)]
+  0x000000000b3e0000 JavaThread "Reference Handler" daemon [_thread_blocked, id=6320, stack(0x000000000d390000,0x000000000d490000)]
+  0x0000000002218000 JavaThread "main" [_thread_blocked, id=3940, stack(0x0000000002570000,0x0000000002670000)]
+
+Other Threads:
+=>0x000000000b3dd000 VMThread [stack: 0x000000000d1e0000,0x000000000d2e0000] [id=5992]
+  0x000000000c187000 WatcherThread [stack: 0x000000000ebc0000,0x000000000ecc0000] [id=7764]
+
+VM state:at safepoint (normal execution)
+
+VM Mutex/Monitor currently owned by a thread:  ([mutex/lock_event])
+[0x0000000001c8e5d0] Threads_lock - owner thread: 0x000000000b3dd000
+
+Heap
+ PSYoungGen      total 34304K, used 15454K [0x00000007d5a80000, 0x00000007d8080000, 0x0000000800000000)
+  eden space 30720K, 47% used [0x00000007d5a80000,0x00000007d68a7ba0,0x00000007d7880000)
+  from space 3584K, 26% used [0x00000007d7900000,0x00000007d79f0000,0x00000007d7c80000)
+  to   space 4096K, 0% used [0x00000007d7c80000,0x00000007d7c80000,0x00000007d8080000)
+ ParOldGen       total 86528K, used 1533K [0x0000000781000000, 0x0000000786480000, 0x00000007d5a80000)
+  object space 86528K, 1% used [0x0000000781000000,0x000000078117f6e0,0x0000000786480000)
+ PSPermGen       total 21504K, used 7806K [0x000000077be00000, 0x000000077d300000, 0x0000000781000000)
+  object space 21504K, 36% used [0x000000077be00000,0x000000077c59f940,0x000000077d300000)
+
+Card table byte_map: [0x0000000005670000,0x0000000005aa0000] byte_map_base: 0x0000000001a91000
+
+Polling page: 0x0000000000330000
+
+Code Cache  [0x0000000002670000, 0x00000000028e0000, 0x0000000005670000)
+ total_blobs=500 nmethods=192 adapters=269 free_code_cache=48296Kb largest_free_block=49424960
+
+Compilation events (10 events):
+Event: 9.079 Thread 0x000000000c186000  188 % !         moa.tasks.EvaluatePeriodicHeldOutTest::doMainTask @ 385 (1118 bytes)
+Event: 9.102 Thread 0x000000000c186000 nmethod 188% 0x000000000273e050 code [0x000000000273e220, 0x000000000273ee10]
+Event: 11.535 Thread 0x000000000c194000  189 % !         java.lang.ref.Reference$ReferenceHandler::run @ 0 (108 bytes)
+Event: 11.537 Thread 0x000000000c186000  190 % !         java.lang.ref.Finalizer$FinalizerThread::run @ 13 (34 bytes)
+Event: 11.552 Thread 0x000000000c194000 nmethod 189% 0x000000000274bdd0 code [0x000000000274bf80, 0x000000000274cef8]
+Event: 11.552 Thread 0x000000000c194000  191   !         java.lang.ref.ReferenceQueue::enqueue (104 bytes)
+Event: 11.552 Thread 0x000000000c186000 nmethod 190% 0x0000000002725cd0 code [0x0000000002725e80, 0x00000000027266a0]
+Event: 11.560 Thread 0x000000000c194000 nmethod 191 0x0000000002747c50 code [0x0000000002747dc0, 0x0000000002748628]
+Event: 234.499 Thread 0x000000000c186000  192             java.lang.AbstractStringBuilder::<init> (12 bytes)
+Event: 234.501 Thread 0x000000000c186000 nmethod 192 0x0000000002738f10 code [0x0000000002739060, 0x0000000002739178]
+
+GC Heap History (10 events):
+Event: 19.654 GC heap before
+{Heap before GC invocations=5 (full 0):
+ PSYoungGen      total 38400K, used 35739K [0x00000007d5a80000, 0x00000007d8500000, 0x0000000800000000)
+  eden space 33280K, 100% used [0x00000007d5a80000,0x00000007d7b00000,0x00000007d7b00000)
+  from space 5120K, 48% used [0x00000007d8000000,0x00000007d8266ea0,0x00000007d8500000)
+  to   space 5120K, 0% used [0x00000007d7b00000,0x00000007d7b00000,0x00000007d8000000)
+ ParOldGen       total 86528K, used 32K [0x0000000781000000, 0x0000000786480000, 0x00000007d5a80000)
+  object space 86528K, 0% used [0x0000000781000000,0x0000000781008000,0x0000000786480000)
+ PSPermGen       total 21504K, used 7406K [0x000000077be00000, 0x000000077d300000, 0x0000000781000000)
+  object space 21504K, 34% used [0x000000077be00000,0x000000077c53b8b0,0x000000077d300000)
+Event: 19.664 GC heap after
+Heap after GC invocations=5 (full 0):
+ PSYoungGen      total 35328K, used 2411K [0x00000007d5a80000, 0x00000007d8180000, 0x0000000800000000)
+  eden space 32768K, 0% used [0x00000007d5a80000,0x00000007d5a80000,0x00000007d7a80000)
+  from space 2560K, 94% used [0x00000007d7b00000,0x00000007d7d5ae90,0x00000007d7d80000)
+  to   space 3584K, 0% used [0x00000007d7e00000,0x00000007d7e00000,0x00000007d8180000)
+ ParOldGen       total 86528K, used 40K [0x0000000781000000, 0x0000000786480000, 0x00000007d5a80000)
+  object space 86528K, 0% used [0x0000000781000000,0x000000078100a000,0x0000000786480000)
+ PSPermGen       total 21504K, used 7406K [0x000000077be00000, 0x000000077d300000, 0x0000000781000000)
+  object space 21504K, 34% used [0x000000077be00000,0x000000077c53b8b0,0x000000077d300000)
+}
+Event: 23.932 GC heap before
+{Heap before GC invocations=6 (full 0):
+ PSYoungGen      total 35328K, used 35179K [0x00000007d5a80000, 0x00000007d8180000, 0x0000000800000000)
+  eden space 32768K, 100% used [0x00000007d5a80000,0x00000007d7a80000,0x00000007d7a80000)
+  from space 2560K, 94% used [0x00000007d7b00000,0x00000007d7d5ae90,0x00000007d7d80000)
+  to   space 3584K, 0% used [0x00000007d7e00000,0x00000007d7e00000,0x00000007d8180000)
+ ParOldGen       total 86528K, used 40K [0x0000000781000000, 0x0000000786480000, 0x00000007d5a80000)
+  object space 86528K, 0% used [0x0000000781000000,0x000000078100a000,0x0000000786480000)
+ PSPermGen       total 21504K, used 7406K [0x000000077be00000, 0x000000077d300000, 0x0000000781000000)
+  object space 21504K, 34% used [0x000000077be00000,0x000000077c53b8b0,0x000000077d300000)
+Event: 23.939 GC heap after
+Heap after GC invocations=6 (full 0):
+ PSYoungGen      total 35328K, used 2443K [0x00000007d5a80000, 0x00000007d8100000, 0x0000000800000000)
+  eden space 32256K, 0% used [0x00000007d5a80000,0x00000007d5a80000,0x00000007d7a00000)
+  from space 3072K, 79% used [0x00000007d7e00000,0x00000007d8062e90,0x00000007d8100000)
+  to   space 3584K, 0% used [0x00000007d7a00000,0x00000007d7a00000,0x00000007d7d80000)
+ ParOldGen       total 86528K, used 40K [0x0000000781000000, 0x0000000786480000, 0x00000007d5a80000)
+  object space 86528K, 0% used [0x0000000781000000,0x000000078100a000,0x0000000786480000)
+ PSPermGen       total 21504K, used 7406K [0x000000077be00000, 0x000000077d300000, 0x0000000781000000)
+  object space 21504K, 34% used [0x000000077be00000,0x000000077c53b8b0,0x000000077d300000)
+}
+Event: 27.767 GC heap before
+{Heap before GC invocations=7 (full 0):
+ PSYoungGen      total 35328K, used 34699K [0x00000007d5a80000, 0x00000007d8100000, 0x0000000800000000)
+  eden space 32256K, 100% used [0x00000007d5a80000,0x00000007d7a00000,0x00000007d7a00000)
+  from space 3072K, 79% used [0x00000007d7e00000,0x00000007d8062e90,0x00000007d8100000)
+  to   space 3584K, 0% used [0x00000007d7a00000,0x00000007d7a00000,0x00000007d7d80000)
+ ParOldGen       total 86528K, used 40K [0x0000000781000000, 0x0000000786480000, 0x00000007d5a80000)
+  object space 86528K, 0% used [0x0000000781000000,0x000000078100a000,0x0000000786480000)
+ PSPermGen       total 21504K, used 7406K [0x000000077be00000, 0x000000077d300000, 0x0000000781000000)
+  object space 21504K, 34% used [0x000000077be00000,0x000000077c53b8b0,0x000000077d300000)
+Event: 27.774 GC heap after
+Heap after GC invocations=7 (full 0):
+ PSYoungGen      total 32768K, used 928K [0x00000007d5a80000, 0x00000007d8080000, 0x0000000800000000)
+  eden space 31744K, 0% used [0x00000007d5a80000,0x00000007d5a80000,0x00000007d7980000)
+  from space 1024K, 90% used [0x00000007d7a00000,0x00000007d7ae8000,0x00000007d7b00000)
+  to   space 3584K, 0% used [0x00000007d7d00000,0x00000007d7d00000,0x00000007d8080000)
+ ParOldGen       total 86528K, used 1525K [0x0000000781000000, 0x0000000786480000, 0x00000007d5a80000)
+  object space 86528K, 1% used [0x0000000781000000,0x000000078117d6e0,0x0000000786480000)
+ PSPermGen       total 21504K, used 7406K [0x000000077be00000, 0x000000077d300000, 0x0000000781000000)
+  object space 21504K, 34% used [0x000000077be00000,0x000000077c53b8b0,0x000000077d300000)
+}
+Event: 31.645 GC heap before
+{Heap before GC invocations=8 (full 0):
+ PSYoungGen      total 32768K, used 32672K [0x00000007d5a80000, 0x00000007d8080000, 0x0000000800000000)
+  eden space 31744K, 100% used [0x00000007d5a80000,0x00000007d7980000,0x00000007d7980000)
+  from space 1024K, 90% used [0x00000007d7a00000,0x00000007d7ae8000,0x00000007d7b00000)
+  to   space 3584K, 0% used [0x00000007d7d00000,0x00000007d7d00000,0x00000007d8080000)
+ ParOldGen       total 86528K, used 1525K [0x0000000781000000, 0x0000000786480000, 0x00000007d5a80000)
+  object space 86528K, 1% used [0x0000000781000000,0x000000078117d6e0,0x0000000786480000)
+ PSPermGen       total 21504K, used 7406K [0x000000077be00000, 0x000000077d300000, 0x0000000781000000)
+  object space 21504K, 34% used [0x000000077be00000,0x000000077c53b8b0,0x000000077d300000)
+Event: 31.649 GC heap after
+Heap after GC invocations=8 (full 0):
+ PSYoungGen      total 34304K, used 928K [0x00000007d5a80000, 0x00000007d8000000, 0x0000000800000000)
+  eden space 31232K, 0% used [0x00000007d5a80000,0x00000007d5a80000,0x00000007d7900000)
+  from space 3072K, 30% used [0x00000007d7d00000,0x00000007d7de8000,0x00000007d8000000)
+  to   space 3584K, 0% used [0x00000007d7900000,0x00000007d7900000,0x00000007d7c80000)
+ ParOldGen       total 86528K, used 1533K [0x0000000781000000, 0x0000000786480000, 0x00000007d5a80000)
+  object space 86528K, 1% used [0x0000000781000000,0x000000078117f6e0,0x0000000786480000)
+ PSPermGen       total 21504K, used 7406K [0x000000077be00000, 0x000000077d300000, 0x0000000781000000)
+  object space 21504K, 34% used [0x000000077be00000,0x000000077c53b8b0,0x000000077d300000)
+}
+Event: 35.429 GC heap before
+{Heap before GC invocations=9 (full 0):
+ PSYoungGen      total 34304K, used 32160K [0x00000007d5a80000, 0x00000007d8000000, 0x0000000800000000)
+  eden space 31232K, 100% used [0x00000007d5a80000,0x00000007d7900000,0x00000007d7900000)
+  from space 3072K, 30% used [0x00000007d7d00000,0x00000007d7de8000,0x00000007d8000000)
+  to   space 3584K, 0% used [0x00000007d7900000,0x00000007d7900000,0x00000007d7c80000)
+ ParOldGen       total 86528K, used 1533K [0x0000000781000000, 0x0000000786480000, 0x00000007d5a80000)
+  object space 86528K, 1% used [0x0000000781000000,0x000000078117f6e0,0x0000000786480000)
+ PSPermGen       total 21504K, used 7406K [0x000000077be00000, 0x000000077d300000, 0x0000000781000000)
+  object space 21504K, 34% used [0x000000077be00000,0x000000077c53b8b0,0x000000077d300000)
+Event: 35.436 GC heap after
+Heap after GC invocations=9 (full 0):
+ PSYoungGen      total 34304K, used 960K [0x00000007d5a80000, 0x00000007d8080000, 0x0000000800000000)
+  eden space 30720K, 0% used [0x00000007d5a80000,0x00000007d5a80000,0x00000007d7880000)
+  from space 3584K, 26% used [0x00000007d7900000,0x00000007d79f0000,0x00000007d7c80000)
+  to   space 4096K, 0% used [0x00000007d7c80000,0x00000007d7c80000,0x00000007d8080000)
+ ParOldGen       total 86528K, used 1533K [0x0000000781000000, 0x0000000786480000, 0x00000007d5a80000)
+  object space 86528K, 1% used [0x0000000781000000,0x000000078117f6e0,0x0000000786480000)
+ PSPermGen       total 21504K, used 7406K [0x000000077be00000, 0x000000077d300000, 0x0000000781000000)
+  object space 21504K, 34% used [0x000000077be00000,0x000000077c53b8b0,0x000000077d300000)
+}
+
+Deoptimization events (10 events):
+Event: 37.040 Thread 0x0000000002218000 Uncommon trap: reason=class_check action=maybe_recompile pc=0x000000000271a1b8 method=java.lang.ThreadLocal.get()Ljava/lang/Object; @ 6
+Event: 37.043 Thread 0x0000000002218000 Uncommon trap: reason=class_check action=maybe_recompile pc=0x0000000002719864 method=com.nativelibs4java.opencl.CLBuffer.getElementSize()I @ 4
+Event: 37.043 Thread 0x0000000002218000 Uncommon trap: reason=class_check action=maybe_recompile pc=0x000000000272bac0 method=com.nativelibs4java.opencl.CLBuffer.getElementSize()I @ 4
+Event: 37.043 Thread 0x0000000002218000 Uncommon trap: reason=class_check action=maybe_recompile pc=0x0000000002719864 method=com.nativelibs4java.opencl.CLBuffer.getElementSize()I @ 4
+Event: 37.043 Thread 0x0000000002218000 Uncommon trap: reason=class_check action=maybe_recompile pc=0x0000000002719864 method=com.nativelibs4java.opencl.CLBuffer.getElementSize()I @ 4
+Event: 37.045 Thread 0x0000000002218000 Uncommon trap: reason=class_check action=maybe_recompile pc=0x000000000272d4ac method=org.bridj.Pointer.validElements(J)Lorg/bridj/Pointer; @ 9
+Event: 37.046 Thread 0x0000000002218000 Uncommon trap: reason=unreached action=reinterpret pc=0x000000000272c97c method=com.nativelibs4java.opencl.CLDevice.getKernelsDefaultByteOrder()Ljava/nio/ByteOrder; @ 4
+Event: 37.046 Thread 0x0000000002218000 Uncommon trap: reason=class_check action=maybe_recompile pc=0x000000000271a1b8 method=java.lang.ThreadLocal.get()Ljava/lang/Object; @ 6
+Event: 37.053 Thread 0x0000000002218000 Uncommon trap: reason=class_check action=maybe_recompile pc=0x000000000272bac0 method=com.nativelibs4java.opencl.CLBuffer.getElementSize()I @ 4
+Event: 37.053 Thread 0x0000000002218000 Uncommon trap: reason=class_check action=maybe_recompile pc=0x000000000272d4ac method=org.bridj.Pointer.validElements(J)Lorg/bridj/Pointer; @ 9
+
+Internal exceptions (10 events):
+Event: 2.850 Thread 0x0000000002218000 Threw 0x00000007d5ae4e10 at C:\re\jdk7u51\527\hotspot\src\share\vm\prims\jvm.cpp:1244
+Event: 2.851 Thread 0x0000000002218000 Threw 0x00000007d5aea6c0 at C:\re\jdk7u51\527\hotspot\src\share\vm\prims\jni.cpp:1632
+Event: 2.851 Thread 0x0000000002218000 Threw 0x00000007d5aeabf0 at C:\re\jdk7u51\527\hotspot\src\share\vm\prims\jvm.cpp:1244
+Event: 9.079 Thread 0x0000000002218000 Threw 0x00000007d6639610 at C:\re\jdk7u51\527\hotspot\src\share\vm\prims\jvm.cpp:1244
+Event: 37.020 Thread 0x0000000002218000 Threw 0x00000007d67e8f00 at C:\re\jdk7u51\527\hotspot\src\share\vm\prims\jvm.cpp:1244
+Event: 37.035 Thread 0x0000000002218000 Threw 0x00000007d67fc7e8 at C:\re\jdk7u51\527\hotspot\src\share\vm\prims\jvm.cpp:1244
+Event: 37.036 Thread 0x0000000002218000 Threw 0x00000007d68032f0 at C:\re\jdk7u51\527\hotspot\src\share\vm\prims\jvm.cpp:1244
+Event: 37.048 Thread 0x0000000002218000 Threw 0x00000007d6808608 at C:\re\jdk7u51\527\hotspot\src\share\vm\prims\jvm.cpp:1244
+Event: 232.044 Thread 0x0000000002218000 Threw 0x00000007d680e010 at C:\re\jdk7u51\527\hotspot\src\share\vm\prims\jvm.cpp:1244
+Event: 232.045 Thread 0x0000000002218000 Threw 0x00000007d68118b0 at C:\re\jdk7u51\527\hotspot\src\share\vm\prims\jvm.cpp:1244
+
+Events (10 events):
+Event: 484.626 Executing VM operation: ChangeBreakpoints done
+Event: 484.628 Executing VM operation: EnterInterpOnlyMode
+Event: 484.628 Executing VM operation: EnterInterpOnlyMode done
+Event: 484.628 Executing VM operation: GetCurrentLocation
+Event: 484.629 Executing VM operation: GetCurrentLocation done
+Event: 484.629 Executing VM operation: ChangeSingleStep
+Event: 484.629 Executing VM operation: ChangeSingleStep done
+Event: 484.629 Executing VM operation: ChangeSingleStep
+Event: 484.629 Executing VM operation: ChangeSingleStep done
+Event: 484.816 Executing VM operation: GetOrSetLocal
+
+
+Dynamic libraries:
+0x000000013f410000 - 0x000000013f443000 	C:\Program Files\Java\jre7\bin\javaw.exe
+0x00000000770c0000 - 0x0000000077269000 	C:\windows\SYSTEM32\ntdll.dll
+0x0000000076ea0000 - 0x0000000076fbf000 	C:\windows\system32\kernel32.dll
+0x000007fefcf80000 - 0x000007fefcfeb000 	C:\windows\system32\KERNELBASE.dll
+0x000007fefe250000 - 0x000007fefe32b000 	C:\windows\system32\ADVAPI32.dll
+0x000007fefea50000 - 0x000007fefeaef000 	C:\windows\system32\msvcrt.dll
+0x000007fefed60000 - 0x000007fefed7f000 	C:\windows\SYSTEM32\sechost.dll
+0x000007fefeaf0000 - 0x000007fefec1d000 	C:\windows\system32\RPCRT4.dll
+0x0000000076fc0000 - 0x00000000770ba000 	C:\windows\system32\USER32.dll
+0x000007feff360000 - 0x000007feff3c7000 	C:\windows\system32\GDI32.dll
+0x000007fefd430000 - 0x000007fefd43e000 	C:\windows\system32\LPK.dll
+0x000007fefed80000 - 0x000007fefee49000 	C:\windows\system32\USP10.dll
+0x000007fefb490000 - 0x000007fefb684000 	C:\windows\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.7601.17514_none_fa396087175ac9ac\COMCTL32.dll
+0x000007feff1d0000 - 0x000007feff241000 	C:\windows\system32\SHLWAPI.dll
+0x000007fefd400000 - 0x000007fefd42e000 	C:\windows\system32\IMM32.DLL
+0x000007feff250000 - 0x000007feff359000 	C:\windows\system32\MSCTF.dll
+0x0000000065160000 - 0x0000000065232000 	C:\Program Files\Java\jre7\bin\msvcr100.dll
+0x000000005a680000 - 0x000000005ae49000 	C:\Program Files\Java\jre7\bin\server\jvm.dll
+0x000007fef7d00000 - 0x000007fef7d09000 	C:\windows\system32\WSOCK32.dll
+0x000007fefea00000 - 0x000007fefea4d000 	C:\windows\system32\WS2_32.dll
+0x000007fefe5e0000 - 0x000007fefe5e8000 	C:\windows\system32\NSI.dll
+0x000007fefade0000 - 0x000007fefae1b000 	C:\windows\system32\WINMM.dll
+0x0000000077290000 - 0x0000000077297000 	C:\windows\system32\PSAPI.DLL
+0x00000000661d0000 - 0x00000000661df000 	C:\Program Files\Java\jre7\bin\verify.dll
+0x00000000661a0000 - 0x00000000661c8000 	C:\Program Files\Java\jre7\bin\java.dll
+0x0000000060d90000 - 0x0000000060dc5000 	C:\Program Files\Java\jre7\bin\jdwp.dll
+0x0000000065780000 - 0x0000000065788000 	C:\Program Files\Java\jre7\bin\npt.dll
+0x0000000066180000 - 0x0000000066195000 	C:\Program Files\Java\jre7\bin\zip.dll
+0x00000000661e0000 - 0x00000000661e9000 	C:\Program Files\Java\jre7\bin\dt_socket.dll
+0x000007fefaf10000 - 0x000007fefaf25000 	C:\windows\system32\NLAapi.dll
+0x000007fef4b20000 - 0x000007fef4b35000 	C:\windows\system32\napinsp.dll
+0x000007fef4a80000 - 0x000007fef4a99000 	C:\windows\system32\pnrpnsp.dll
+0x000007fef4910000 - 0x000007fef4920000 	C:\windows\system32\wshbth.dll
+0x000007fefc6e0000 - 0x000007fefc735000 	C:\windows\System32\mswsock.dll
+0x000007fefc560000 - 0x000007fefc5bb000 	C:\windows\system32\DNSAPI.dll
+0x000007fefadb0000 - 0x000007fefadbb000 	C:\windows\System32\winrnr.dll
+0x000007fef8420000 - 0x000007fef844f000 	C:\Program Files\Common Files\Microsoft Shared\Windows Live\WLIDNSP.DLL
+0x000007fefbff0000 - 0x000007fefc017000 	C:\windows\system32\IPHLPAPI.DLL
+0x000007fefbfe0000 - 0x000007fefbfeb000 	C:\windows\system32\WINNSI.DLL
+0x000007fefaac0000 - 0x000007fefab13000 	C:\windows\System32\fwpuclnt.dll
+0x000007fef8de0000 - 0x000007fef8de8000 	C:\windows\system32\rasadhlp.dll
+0x000007fefc020000 - 0x000007fefc05e000 	C:\Program Files (x86)\Avira\AntiVir Desktop\avsda64.dll
+0x000007fefbfc0000 - 0x000007fefbfc7000 	C:\windows\System32\wshtcpip.dll
+0x000007fefc740000 - 0x000007fefc757000 	C:\windows\system32\CRYPTSP.dll
+0x000007fefc440000 - 0x000007fefc487000 	C:\windows\system32\rsaenh.dll
+0x000007fefc170000 - 0x000007fefc18e000 	C:\windows\system32\USERENV.dll
+0x000007fefce70000 - 0x000007fefce7f000 	C:\windows\system32\profapi.dll
+0x000007fefcda0000 - 0x000007fefcdaf000 	C:\windows\system32\CRYPTBASE.dll
+0x0000000065d90000 - 0x0000000065da9000 	C:\Program Files\Java\jre7\bin\net.dll
+0x000007fefc6d0000 - 0x000007fefc6d7000 	C:\windows\System32\wship6.dll
+0x0000000065d70000 - 0x0000000065d81000 	C:\Program Files\Java\jre7\bin\nio.dll
+0x000007fefa420000 - 0x000007fefa449000 	C:\Users\ÐÐÐ\AppData\Local\Temp\BridJExtractedLibraries7832276175843188225\bridj.dll
+0x000007fefa460000 - 0x000007fefa475000 	C:\Program Files (x86)\AMD APP SDK\2.9\bin\x86_64\OpenCL.dll
+0x000007fee5b60000 - 0x000007fee6b74000 	C:\windows\system32\amdocl64.dll
+0x000007feedfb0000 - 0x000007feee0d5000 	C:\windows\system32\dbghelp.dll
+0x0000000069000000 - 0x00000000696bb000 	C:\windows\system32\aticaldd64.dll
+0x000007fef68a0000 - 0x000007fef69bd000 	C:\windows\system32\OPENGL32.dll
+0x000007fef6870000 - 0x000007fef689d000 	C:\windows\system32\GLU32.dll
+0x000007fef66e0000 - 0x000007fef67d1000 	C:\windows\system32\DDRAW.dll
+0x000007fef8df0000 - 0x000007fef8df8000 	C:\windows\system32\DCIMAN32.dll
+0x000007fefe800000 - 0x000007fefe9d7000 	C:\windows\system32\SETUPAPI.dll
+0x000007fefcff0000 - 0x000007fefd026000 	C:\windows\system32\CFGMGR32.dll
+0x000007fefee50000 - 0x000007fefef27000 	C:\windows\system32\OLEAUT32.dll
+0x000007fefe5f0000 - 0x000007fefe7f3000 	C:\windows\system32\ole32.dll
+0x000007fefcf60000 - 0x000007fefcf7a000 	C:\windows\system32\DEVOBJ.dll
+0x000007fefad60000 - 0x000007fefad78000 	C:\windows\system32\dwmapi.dll
+0x000007fefaa30000 - 0x000007fefaa3c000 	C:\windows\system32\atig6txx.dll
+0x000007fefbfd0000 - 0x000007fefbfdc000 	C:\windows\system32\VERSION.dll
+0x0000000070ca0000 - 0x0000000070d44000 	C:\windows\system32\aticfx64.dll
+0x0000000180000000 - 0x000000018005a000 	C:\windows\system32\atiadlxx.dll
+0x000007fefd440000 - 0x000007fefe1c8000 	C:\windows\system32\SHELL32.dll
+0x000007fefbfa0000 - 0x000007fefbfb1000 	C:\windows\system32\WTSAPI32.dll
+0x000007fefd1a0000 - 0x000007fefd1da000 	C:\windows\system32\WINTRUST.dll
+0x000007fefd030000 - 0x000007fefd19c000 	C:\windows\system32\CRYPT32.dll
+0x000007fefcf10000 - 0x000007fefcf1f000 	C:\windows\system32\MSASN1.dll
+0x000007fef9ca0000 - 0x000007fef9cc2000 	C:\windows\system32\IntelOpenCL64.dll
+0x00000000711e0000 - 0x00000000712b3000 	C:\windows\WinSxS\amd64_microsoft.vc90.crt_1fc8b3b9a1e18e3b_9.0.30729.6161_none_08e61857a83bc251\MSVCP90.dll
+0x0000000071130000 - 0x00000000711d3000 	C:\windows\WinSxS\amd64_microsoft.vc90.crt_1fc8b3b9a1e18e3b_9.0.30729.6161_none_08e61857a83bc251\MSVCR90.dll
+0x000007feed4b0000 - 0x000007feed558000 	C:\Program Files (x86)\Intel\OpenCL SDK\2.0\bin\x64\intelocl.dll
+0x000007fee3020000 - 0x000007fee41b6000 	C:\Program Files (x86)\Intel\OpenCL SDK\2.0\bin\x64\clang_compiler.dll
+0x000007fefa400000 - 0x000007fefa415000 	C:\Program Files (x86)\Intel\OpenCL SDK\2.0\bin\x64\task_executor.dll
+0x0000000006570000 - 0x00000000065bb000 	C:\Program Files (x86)\Intel\OpenCL SDK\2.0\bin\x64\tbb.dll
+0x000007feef440000 - 0x000007feef496000 	C:\Program Files (x86)\Intel\OpenCL SDK\2.0\bin\x64\cpu_device.dll
+0x0000000061660000 - 0x000000006166b000 	C:\Program Files\Java\jre7\bin\management.dll
+
+VM Arguments:
+jvm_args: -agentlib:jdwp=transport=dt_socket,suspend=y,address=localhost:60932 -Dfile.encoding=Cp1251 
+java_command: org.stream_gpu.knn.DualTest
+Launcher Type: SUN_STANDARD
+
+Environment Variables:
+JAVA_HOME=C:\java\jdk
+CLASSPATH=C:/HADOOP-0.22/hadoop-common-0.22.0.jar;C:/HADOOP-0.22/hadoop-hdfs-0.22.0.jar;C:/HADOOP-0.22/hadoop-hdfs-ant-0.22.0.jar;c:/HADOOP-0.22/hadoop-mapred-0.22.0.jar;C:/HADOOP-0.22/hadoop-mapred-tools-0.22.0.jar
+PATH=C:\Users\ÐÐÐ\AMD APP SDK\2.9\bin\x86_64;C:\Users\ÐÐÐ\AMD APP SDK\2.9\bin\x86;C:\Program Files (x86)\AMD APP SDK\2.9\bin\x86_64;C:\Program Files (x86)\AMD APP SDK\2.9\bin\x86;C:\Perl64\site\bin;C:\Perl64\bin;C:\Program Files\Common Files\Microsoft Shared\Windows Live;C:\Program Files (x86)\Common Files\Microsoft Shared\Windows Live;C:\Program Files (x86)\MiKTeX 2.9\miktex\bin;C:\Program Files (x86)\AMD APP\bin\x86_64;C:\Program Files (x86)\AMD APP\bin\x86;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files (x86)\Haskell\bin;C:\Program Files (x86)\Haskell Platform\2011.4.0.0\lib\extralibs\bin;C:\Program Files (x86)\Haskell Platform\2011.4.0.0\bin;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\Program Files (x86)\ATI Technologies\ATI.ACE\Core-Static;C:\Program Files\Lenovo\Bluetooth Software\;C:\Program Files\Lenovo\Bluetooth Software\syswow64;C:\Program Files (x86)\Windows Live\Shared;c:/java/jdk/bin;C:\Program Files\SlikSvn\bin\;C:\winddk\vdk;C:\WinDDK\7600.16385.1\Debuggers;C:\Program Files\Microsoft Windows Performance Toolkit\;C:\Baz;C:\CMAKE\bin;C:\Program Files (x86)\Calibre2\;C:\Program Files\TortoiseSVN\bin;C:\Program Files (x86)\Intel\OpenCL SDK\2.0\bin\x86;C:\Program Files (x86)\Intel\OpenCL SDK\2.0\bin\x64;C:\eclipse-3-7-2\storm\bin;C:\Program Files\Microsoft Network Monitor 3\;C:\Program Files\Microsoft\Web Platform Installer\;C:\Program Files (x86)\Microsoft ASP.NET\ASP.NET Web Pages\v1.0\;C:\CryptoSDK\Windows Performance Toolkit\;C:\Program Files\Microsoft SQL Server\110\Tools\Binn\;C:\Program Files (x86)\Git\cmd;C:\Program Files (x86)\sbt\;C:\nodejs\;C:\Users\ÐÐÐ\AppData\Roaming\cabal\bin;C:\Program Files (x86)\Sikuli X\libs;C:\Program Files (x86)\Java\jre6\\bin;C:\Program Files (x86)\MiKTeX 2.9\miktex\bin;C:\Program Files\Mercurial;C:\Users\ÐÐÐ\AppData\Roaming\npm
+USERNAME=ÐÐÐ
+OS=Windows_NT
+PROCESSOR_IDENTIFIER=Intel64 Family 6 Model 30 Stepping 5, GenuineIntel
+
+
+
+---------------  S Y S T E M  ---------------
+
+OS: Windows 7 , 64 bit Build 7601 Service Pack 1
+
+CPU:total 8 (4 cores per cpu, 2 threads per core) family 6 model 30 stepping 5, cmov, cx8, fxsr, mmx, sse, sse2, sse3, ssse3, sse4.1, sse4.2, popcnt, ht, tsc, tscinvbit
+
+Memory: 4k page, physical 8319552k(3747012k free), swap 16637240k(11282860k free)
+
+vm_info: Java HotSpot(TM) 64-Bit Server VM (24.51-b03) for windows-amd64 JRE (1.7.0_51-b13), built on Dec 18 2013 18:40:56 by "java_re" with unknown MS VC++:1600
+
+time: Tue Apr 15 18:03:49 2014
+elapsed time: 484 seconds
+

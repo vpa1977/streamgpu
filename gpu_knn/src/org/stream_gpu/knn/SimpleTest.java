@@ -18,7 +18,7 @@ import com.nativelibs4java.opencl.JavaCL;
 public class SimpleTest {
 	
 	
-	public double distance( Instance src, Instance dst)
+/*	public double distance( Instance src, Instance dst)
 	{
 		double[] src_val = src.toDoubleArray();
 		double[] dst_val = dst.toDoubleArray();
@@ -42,12 +42,51 @@ public class SimpleTest {
 		}
 		return dist;
 	}
+	*/
 	
-	
-	public static void main(String[] args)
-	{
+	public static void main(String[] args) {
 		
-		System.out.println(System.getProperty("java.class.path"));
+		int[]sample = new int[256];
+		
+		int half_len = 256;
+		int[] partial_sums = new int[half_len];
+		for (int lid = 0 ;lid <half_len; lid ++ )
+		{
+			partial_sums[lid] = sample[lid*2] +sample[lid*2+1];
+		}
+		
+		System.out.print("ss");
+		
+		int steps =(int)( Math.log(half_len)/ Math.log(2));
+		
+		int offset = 2;
+		for (int step = 0 ; step < steps ; step ++ )
+		{
+			for (int i = 0 ;i < partial_sums.length ; i ++ )
+			{
+				float value = (i+1) / offset;
+				if (value == Math.floor(value))
+				{
+					
+				}
+				
+			}
+			offset *=2;
+		}
+		
+		 for(int i = 8/2; i>0; i >>= 1) {
+				for (int lid = 0 ;lid < 8 ; lid ++ )
+				{
+			      if(lid < i) {
+			         partial_sums[lid] += partial_sums[lid + i];
+			      }
+				}
+		  }
+		
+		
+		System.out.print("ss");
+		
+		/*System.out.println(System.getProperty("java.class.path"));
 		CLContext context = JavaCL.createContext(null,
 				JavaCL.listPlatforms()[0].listAllDevices(false)[0]);
 
@@ -91,6 +130,7 @@ public class SimpleTest {
 		
 		System.out.println();
 		new JFrame().setVisible(true);
+		*/
 		
 	}
 }

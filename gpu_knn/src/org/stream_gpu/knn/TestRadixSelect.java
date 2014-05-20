@@ -23,8 +23,6 @@ public class TestRadixSelect extends TestCase {
 		src[2]=1;
 		src[30]=1;
 		radixSelect(src, 15);
-		
-		
 	}
 	
 	private void printArray(int[] arr)
