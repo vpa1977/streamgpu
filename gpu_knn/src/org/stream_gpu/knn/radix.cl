@@ -50,123 +50,77 @@
 	}
 }
 
-// run the prefix sum. 
-
-// local_buf - half of the workgroup size
- __kernel void prefix_sum_group(__global uint* src, __local uint* local_buf)
+ 
+ __kernel void prefix_sum_up(__global uint* src, __local uint* local_buf, __global uint* up_indices,  const uint max_up) 
  {
-	uint stride, step;
-	uint prev =0;
-	uint id = get_global_id(0) << 1;
-	uint lid = get_local_id(0);
-	uint half_size = get_local_size(0) /2;
-	
-
-	local_buf[lid] = src[id] + src[id+1];
-	barrier( CLK_LOCAL_MEM_FENCE);
-	for (stride = 1, step =1 ; stride <=  half_size ; stride =stride <<1, ++step) 
-	{
-		// module power of 2, see testSequence in TestScanDigit.java
-		int value = lid - prev;
-		if (value >=0) 
-		{
-			uint pw = 1 << step;
-			uint mod = value & (pw  -1);
-			if (mod == 0 ) 
-			{
-				local_buf[lid+stride] += local_buf[lid];
-			}
-			barrier( CLK_LOCAL_MEM_FENCE);
-		}
-		prev += stride;
-	}
-	src[id+1] = local_buf[lid];
+   	int id = 2*get_global_id(0)+1;
+   	int lid = get_local_id(0);
+ 	int up_index =  up_indices[id];
+ 	int half_size = get_local_size(0)/2;
+ 	int step =2;
+ 	int stride;
+ 	local_buf[lid] = src[id] + src[id-1];
+ 	barrier( CLK_LOCAL_MEM_FENCE);
+ 	// perform up sweep
+  	for (stride = 1; stride <= half_size; stride = stride *2, ++step)
+  	{
+  		if (up_index >= step)
+  		{
+  			local_buf[lid] += local_buf[lid - stride];
+  		}
+  		barrier( CLK_LOCAL_MEM_FENCE);
+  	}
+  	
+  	stride = stride * 2;
+  	src[id] = local_buf[lid];
+  	barrier( CLK_GLOBAL_MEM_FENCE);
+  	
+  	for (; step <= max_up; ++step, stride = stride * 2 )
+  	{
+  		if (up_index >= step)
+  		{
+  			src[id] += src[id - stride];
+  		}
+  		barrier( CLK_GLOBAL_MEM_FENCE );
+  	}
+  	
  }
-
-// same code as prefix_sum_group, but uses last element of each workgroup, global size [0.. num_workgroups] for the prefix_sum_workgroup
-// local_buf - half of the number of workgroups
- __kernel void prefix_sum_global(__global uint* src, __local uint* local_buf,const int global_stride)
+ 
+ __kernel void prefix_sum_down(__global uint* src, __local uint* local_buf, __global uint* down_indices,   const uint max_down) 
  {
-	uint stride, step;
-	uint prev =0;
-	uint id = 	2 * get_global_id(0) * global_stride + global_stride -1;
-	uint lid = get_local_id(0);
-	uint half_size = get_local_size(0) /2;
-	local_buf[lid] = src[id] + src[id+global_stride];
-	barrier( CLK_LOCAL_MEM_FENCE);
-	for (stride = 1, step =1 ; stride <=  half_size ; stride =stride <<1, ++step) 
-	{
-		// module power of 2, see testSequence in TestScanDigit.java
-		int value = lid - prev;
-		if (value >=0) 
-		{
-			uint pw = 1 << step;
-			uint mod = value & (pw  -1);
-			if (mod == 0) 
-			{
-				local_buf[lid+stride] += local_buf[lid];
-			}
-			barrier( CLK_LOCAL_MEM_FENCE | CLK_GLOBAL_MEM_FENCE);
-		}
-		prev += stride;
-	}
-	src[id+global_stride] = local_buf[lid];
- }
+   	int id = get_global_id(0)+1;
+   	int lid = get_local_id(0);
+ 	int down_index = down_indices[id];
+ 	int half_size = get_local_size(0)/2;
+ 	int quarter_size = half_size/2;
+ 	int step =1;
+ 	int stride;
+  	// perform down-sweep
+  	stride = ( 1 << (max_down-1));
+  	for (step = max_down; stride >quarter_size ; --step, stride = stride /2)
+  	{
+  		if (down_index == step) 
+  		{
+  			src[id] += src[id - stride];
+  			printf("global step %d assign %d from %d\n", step, id, id-stride);
+  		}
+  		barrier( CLK_GLOBAL_MEM_FENCE);
+  	}  
 
- // second pass of the prefix sum - 
- __kernel void prefix_sum_group_down(__global uint* src, __local uint* local_buf) 
- {
-	uint stride, step;
-	uint id = get_global_id(0);
-	uint lid = get_local_id(0);
-	uint half_size = get_local_size(0) /2;
-	uint prev =half_size -1;
-	local_buf[lid] = src[id];
-	barrier( CLK_LOCAL_MEM_FENCE);
-
-	if ( lid <  get_local_size(0) -1)
-	{
-		for (stride = half_size/2, step = half_size; stride >0; stride = stride >> 1, step = step >> 1 )
-		{
-			int value = lid - prev;
-			if (value >=0)
-			{
-				int mod = value & ( step -1);
-				if (mod == 0)
-				{
-					local_buf[lid + stride] += local_buf[lid];
-					barrier( CLK_LOCAL_MEM_FENCE);
-				}
-			}
-			prev -= stride;
-		}
-	}
+ 	local_buf[lid] = src[id];
+ 	printf("do copy %d value %d\n", id, local_buf[lid]);
+ 	barrier( CLK_LOCAL_MEM_FENCE );
+  	
+  	for (; stride >0; --step, stride = stride /2)
+  	{
+  		if (down_index == step) 
+  		{
+  			local_buf[lid] = local_buf[lid - stride] + local_buf[lid];
+  			printf("local step %d assign %d from %d value %d+%d\n", step, lid, lid-stride, local_buf[lid - stride] ,local_buf[lid]);
+  		}
+  		barrier( CLK_LOCAL_MEM_FENCE);
+  	}
 	src[id] = local_buf[lid];
- }
-
-  __kernel void prefix_sum_global_down(__global uint* src, __local uint* local_buf,__global uint* indices, const int global_stride )
- {
-	uint stride, step;
-	
-	int id = (2 * global_stride -1) + 2*global_stride  * get_global_id(0);
-	int lid = 2*get_local_id(0);
-	int half_size = get_local_size(0);
-	
-	local_buf[lid] = src[id];
-	local_buf[lid+1] = src[id + global_stride];
-	barrier( CLK_LOCAL_MEM_FENCE);
-	for (stride = half_size/2; stride >= 1; stride = stride >> 1)
-	{
-		if (stride == indices[lid])
-		{
-			local_buf[lid] += local_buf[lid-stride];
-		}
-		if (stride == indices[lid+1]) 
-		{
-			local_buf[lid +1] += local_buf[lid+1-stride];
-		}
-		barrier( CLK_LOCAL_MEM_FENCE);
-	}
-	src[id] = local_buf[lid];
-	src[id+global_stride] = local_buf[lid+1];
- }
+}
+ 
+ 
