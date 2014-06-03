@@ -15,6 +15,9 @@ import com.nativelibs4java.opencl.LocalSize;
 
 public class PrefixScan {
 	
+	static int SIGNIFICANT_DIGITS = 7;
+	static int DIGIT_VALUES = 16;
+	
 	private CLQueue m_queue;
 	private CLContext m_context;
 	private CLBuffer<Integer> m_digit_scan_output_buffer;
@@ -90,31 +93,7 @@ public class PrefixScan {
 	     m_max_step = max; 
 	}
 	
-	/*
-	private void createSumDownIndices(int size)
-	{
-	   int half_size = size/2;				
-	   int[] indices = new int[ size];
-	   int stride = 2;
-	   while (stride <= m_group_size)
-	   {
-		   int pos = 0;
-		   while (pos < 2*m_group_size) 
-		   {
-			   pos += stride;
-			   if (pos-2 + stride/2 < indices.length)
-				   indices[pos-2 + stride/2 ] = stride/2;
-		   }
-		   stride = stride * 2;
-	   }
-	   m_sum_down_indices = m_context.createIntBuffer(Usage.Input, indices.length);
-	   Pointer<Integer> p = m_sum_down_indices.map(m_queue, MapFlags.Write, new CLEvent[0]);
-	   p.setInts( indices );
-	   m_sum_down_indices.unmap(m_queue, p, new CLEvent[0]);
-	}
-	
-	*/
-	
+
 	CLBuffer<Integer> digitScanOutputBuffer()
 	{
 		return m_digit_scan_output_buffer;
@@ -149,19 +128,17 @@ public class PrefixScan {
 		int[] input = ptr.getInts();
 		buf.unmap(m_queue, ptr, new CLEvent[0]);
 	}
-
-
-
-	public static void main(String[] args) throws Throwable 
+	
+	private static void testPrefixSum() throws Throwable
 	{
-		int[] input = new int[1024];
+		int[] input = new int[16*16];
 		for (int i = 0; i < input.length; i++)
 			input[i]= 1;
 		
 		CLContext context = JavaCL.createContext(null,
 				JavaCL.listPlatforms()[0].listAllDevices(false)[0]);
 		CLQueue queue = context.createDefaultQueue();
-		int group_size = 256;
+		int group_size = 4;
 		
 		PrefixScan scan = new PrefixScan( context, queue, group_size, input.length);
 		CLBuffer<Integer> buf = context.createIntBuffer(Usage.InputOutput, input.length);
@@ -174,6 +151,49 @@ public class PrefixScan {
 		
 
 		System.out.println();
+		
+	}
+
+
+
+	public static void main(String[] args) throws Throwable 
+	{
+		
+		//testPrefixSum();
+		int[] input = new int[1024];
+		for (int i = 0; i < input.length; i++)
+			input[i]= i;
+		
+		CLContext context = JavaCL.createContext(null,
+				JavaCL.listPlatforms()[0].listAllDevices(false)[0]);
+		CLQueue queue = context.createDefaultQueue();
+		int group_size = 256;
+		
+		
+		PrefixScan scan = new PrefixScan( context, queue, group_size, input.length * DIGIT_VALUES);
+		CLBuffer<Integer> buf = context.createIntBuffer(Usage.InputOutput, input.length);
+		Pointer<Integer> ptr = buf.map(queue, MapFlags.Write, new CLEvent[0]);
+		ptr.setInts(input);
+		buf.unmap(queue, ptr, new CLEvent[0]);
+		
+		long start = System.currentTimeMillis();
+		
+		for (int i = 0 ; i < 1000 ; i ++ )
+			
+		for (int pos = SIGNIFICANT_DIGITS ; pos >=0 ; --pos)
+		{
+			CLBuffer<Integer> positions = scan.scan(buf, pos );
+			//scan.checkBuffer(positions);
+			scan.prefixSum(positions);
+			//scan.checkBuffer(positions);
+		}
+		
+		
+		long end = System.currentTimeMillis();
+		
+
+		System.out.println( (end-start)); // 284
+
 		
 	}
 

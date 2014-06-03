@@ -102,13 +102,13 @@
   		if (down_index == step) 
   		{
   			src[id] += src[id - stride];
-  			printf("global step %d assign %d from %d\n", step, id, id-stride);
+  			
   		}
   		barrier( CLK_GLOBAL_MEM_FENCE);
   	}  
 
  	local_buf[lid] = src[id];
- 	printf("do copy %d value %d\n", id, local_buf[lid]);
+ 	
  	barrier( CLK_LOCAL_MEM_FENCE );
   	
   	for (; stride >0; --step, stride = stride /2)
@@ -116,7 +116,7 @@
   		if (down_index == step) 
   		{
   			local_buf[lid] = local_buf[lid - stride] + local_buf[lid];
-  			printf("local step %d assign %d from %d value %d+%d\n", step, lid, lid-stride, local_buf[lid - stride] ,local_buf[lid]);
+  			
   		}
   		barrier( CLK_LOCAL_MEM_FENCE);
   	}
