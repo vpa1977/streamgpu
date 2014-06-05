@@ -131,14 +131,14 @@ public class PrefixScan {
 	
 	private static void testPrefixSum() throws Throwable
 	{
-		int[] input = new int[16*16];
+		int[] input = new int[1024];
 		for (int i = 0; i < input.length; i++)
 			input[i]= 1;
 		
 		CLContext context = JavaCL.createContext(null,
 				JavaCL.listPlatforms()[0].listAllDevices(false)[0]);
 		CLQueue queue = context.createDefaultQueue();
-		int group_size = 4;
+		int group_size = 256;
 		
 		PrefixScan scan = new PrefixScan( context, queue, group_size, input.length);
 		CLBuffer<Integer> buf = context.createIntBuffer(Usage.InputOutput, input.length);
@@ -160,6 +160,7 @@ public class PrefixScan {
 	{
 		
 		//testPrefixSum();
+		
 		int[] input = new int[1024];
 		for (int i = 0; i < input.length; i++)
 			input[i]= i;
@@ -183,9 +184,9 @@ public class PrefixScan {
 		for (int pos = SIGNIFICANT_DIGITS ; pos >=0 ; --pos)
 		{
 			CLBuffer<Integer> positions = scan.scan(buf, pos );
-			//scan.checkBuffer(positions);
+			scan.checkBuffer(positions);
 			scan.prefixSum(positions);
-			//scan.checkBuffer(positions);
+			scan.checkBuffer(positions);
 		}
 		
 		
