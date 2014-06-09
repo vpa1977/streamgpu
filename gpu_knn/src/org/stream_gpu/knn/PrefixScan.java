@@ -68,7 +68,7 @@ public class PrefixScan {
 			for (int pos = prev; pos < size; pos += stride)
 			{
 				int up_sum_index = pos + stride/2;
-				int down_sum_index = up_sum_index + stride/2;
+				int down_sum_index = up_sum_index;
 				up_indices[up_sum_index]+=1;
 				if (down_sum_index < down_indices.length )
 				{
@@ -80,6 +80,8 @@ public class PrefixScan {
 			stride = stride *2;
 			
 		}
+		
+		down_indices[down_indices.length -1 ] = 0;
 
 		 m_sum_up_indices = m_context.createIntBuffer(Usage.Input, up_indices.length);
 	     Pointer<Integer> p = m_sum_up_indices.map(m_queue, MapFlags.Write, new CLEvent[0]);
@@ -129,16 +131,30 @@ public class PrefixScan {
 		buf.unmap(m_queue, ptr, new CLEvent[0]);
 	}
 	
+	public void isPrefixSum(CLBuffer<Integer> buf) throws Exception
+	{
+		Pointer<Integer> ptr = buf.map(m_queue, MapFlags.Read, new CLEvent[0]);
+		int[] input = ptr.getInts();
+		buf.unmap(m_queue, ptr, new CLEvent[0]);
+		for (int i = 1 ; i < input.length ; i ++ )
+		{
+			if (input[i] - input[i-1] != 1)
+				throw new Exception("oh damn");
+		}
+	}
+
+	
 	private static void testPrefixSum() throws Throwable
 	{
-		int[] input = new int[1024];
+		int group_size = 32;
+		int[] input = new int[64];
 		for (int i = 0; i < input.length; i++)
 			input[i]= 1;
 		
 		CLContext context = JavaCL.createContext(null,
 				JavaCL.listPlatforms()[0].listAllDevices(false)[0]);
 		CLQueue queue = context.createDefaultQueue();
-		int group_size = 256;
+		
 		
 		PrefixScan scan = new PrefixScan( context, queue, group_size, input.length);
 		CLBuffer<Integer> buf = context.createIntBuffer(Usage.InputOutput, input.length);
@@ -147,7 +163,7 @@ public class PrefixScan {
 		buf.unmap(queue, ptr, new CLEvent[0]);
 		
 		scan.prefixSum(buf);
-		scan.checkBuffer(buf);
+		scan.isPrefixSum(buf);
 		
 
 		System.out.println();
@@ -194,7 +210,6 @@ public class PrefixScan {
 		
 
 		System.out.println( (end-start)); // 284
-
 		
 	}
 
@@ -202,19 +217,28 @@ public class PrefixScan {
 	public void prefixSum(CLBuffer<Integer> buf) {
 		long  global_size = buf.getElementCount();
 		long local_size = Math.min(m_group_size, global_size);
+		long up_local_size = Math.min( global_size/2 , local_size);
+		
 		m_prefix_sum_up.setArg(0,  buf);
 		m_prefix_sum_up.setArg(1,  LocalSize.ofIntArray(local_size));
 		m_prefix_sum_up.setArg(2,  m_sum_up_indices);
 		m_prefix_sum_up.setArg(3,  m_max_step);
-		
-		long up_local_size = Math.min( global_size/2 , local_size);
 		m_prefix_sum_up.enqueueNDRange(m_queue, null,  new long[] {global_size/2} , new long[]{ up_local_size}, new CLEvent[0]);
-		m_prefix_sum_down.setArg(0,  buf);
-		m_prefix_sum_down.setArg(1,  LocalSize.ofIntArray(local_size));
-		m_prefix_sum_down.setArg(2,  m_sum_down_indices);
-		m_prefix_sum_down.setArg(3,  m_max_down);
 		
-		m_prefix_sum_down.enqueueNDRange(m_queue, null,  new long[] {global_size} , new long[]{ local_size}, new CLEvent[0]);
+		checkBuffer(buf);
+		
+		for (int step = m_max_down ; step > 0 ; step -- )
+		{
+			m_prefix_sum_down.setArg(0,  buf);
+			m_prefix_sum_down.setArg(1,  LocalSize.ofIntArray(2 * up_local_size +1));
+			m_prefix_sum_down.setArg(2,  m_sum_down_indices);
+			m_prefix_sum_down.setArg(3,  step);
+			int cur_global_size = (int)(global_size / (1 << (step)));
+			int local =  (int)Math.min(cur_global_size,  up_local_size);
+			System.out.println( cur_global_size + "/"+ local);
+			m_prefix_sum_down.enqueueNDRange(m_queue, new long[] {1},  new long[] {cur_global_size} , new long[]{local}, new CLEvent[0]);
+			
+		}
 	}
 	
 	
