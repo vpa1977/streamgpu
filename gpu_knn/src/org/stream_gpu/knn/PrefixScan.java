@@ -21,6 +21,7 @@ public class PrefixScan {
 	private CLQueue m_queue;
 	private CLContext m_context;
 	private CLBuffer<Integer> m_digit_scan_output_buffer;
+	private CLKernel m_scan_and_move_digit;
 	private CLKernel m_digit_scan_kernel;
 	private CLKernel m_prefix_sum_up;
 	private CLKernel m_prefix_sum_down;
@@ -28,6 +29,9 @@ public class PrefixScan {
 	private int m_group_size;
 	private int m_max_step;
 	private int m_max_down;
+	private int m_global_size;
+	private int m_half_local_size;
+	private int m_scan_group_size;
 	
 	private CLBuffer<Integer> m_sum_down_indices;
 	
@@ -37,6 +41,7 @@ public class PrefixScan {
 	{
 		m_queue = queue;
 		m_group_size = group_size;
+		m_scan_group_size = group_size;
 		m_context = context;
 		
 		String kernel_source = KernelLoader.readKernel("radix.cl");
@@ -45,13 +50,35 @@ public class PrefixScan {
 		m_digit_scan_kernel = cl_program.createKernel("scan_digit");
 		m_prefix_sum_up = cl_program.createKernel("prefix_sum_up");
 		m_prefix_sum_down = cl_program.createKernel("prefix_sum_down");
+		m_scan_and_move_digit = cl_program.createKernel("scan_and_move_digit");
 		//m_prefix_sum_up_stage_n  = cl_program.createKernel("sum_up");
 		//m_prefix_sum_down_stage_n = cl_program.createKernel("sum_down");
 		
-		
+		m_global_size = global_size;
+		m_group_size = Math.min(group_size, global_size);
+		m_half_local_size = Math.min( m_global_size/2 , m_group_size);
 		createSumIndices( global_size );
+		
+		m_prefix_sum_up.setArg(1,  LocalSize.ofIntArray(m_group_size));
+		m_prefix_sum_up.setArg(2,  m_sum_up_indices);
+		m_prefix_sum_up.setArg(3,  m_max_step);
 	}
 	
+	public void prefixSum(CLBuffer<Integer> buf) {
+		m_prefix_sum_up.setArg(0,  buf);
+		m_prefix_sum_up.enqueueNDRange(m_queue, null,  new long[] {m_global_size/2} , new long[]{ m_half_local_size}, new CLEvent[0]);
+		  
+		for (int step = m_max_down ; step > 0 ; step -- )
+		{
+			m_prefix_sum_down.setArg(0,  buf);
+			m_prefix_sum_down.setArg(1,  step);
+			int cur_global_size = (int)(m_global_size / (1 << (step)));
+			int local =  (int)Math.min(cur_global_size,  m_half_local_size);
+			m_prefix_sum_down.enqueueNDRange(m_queue, new long[] {1},  new long[] {cur_global_size} , new long[]{local}, new CLEvent[0]);
+		}
+		
+		
+	}
 	
 
 	private void createSumIndices(int size)
@@ -103,11 +130,13 @@ public class PrefixScan {
 	
 	/**
 	 * Count digits
-	 * @param input - vector of numbers where digits should be scanned, aligned to power of 2
+	 * @param input - vector of numbers where digits should be scanned, aligned to power of 2 and greater that m_group_size
 	 * @return scan result - returns counts of each digit  - ones per workgroup, two's per workgroup etc =)
 	 */
 	public  CLBuffer<Integer> scan(CLBuffer<Integer> input,  int position)
 	{
+		if (input.getElementCount() < m_group_size) 
+			throw new IllegalArgumentException("element count is less than group size");
 		int bitshift = position * 4;
 		// 
 		if (m_digit_scan_output_buffer == null || m_digit_scan_output_buffer.getElementCount() != 16 * (input.getElementCount() / m_group_size))
@@ -146,8 +175,8 @@ public class PrefixScan {
 	
 	private static void testPrefixSum() throws Throwable
 	{
-		int group_size = 32;
-		int[] input = new int[64];
+		int group_size = 4;
+		int[] input = new int[16];
 		for (int i = 0; i < input.length; i++)
 			input[i]= 1;
 		
@@ -175,7 +204,7 @@ public class PrefixScan {
 	public static void main(String[] args) throws Throwable 
 	{
 		
-		//testPrefixSum();
+		testPrefixSum();
 		
 		int[] input = new int[1024];
 		for (int i = 0; i < input.length; i++)
@@ -187,22 +216,32 @@ public class PrefixScan {
 		int group_size = 256;
 		
 		
-		PrefixScan scan = new PrefixScan( context, queue, group_size, input.length * DIGIT_VALUES);
+		PrefixScan scan = new PrefixScan( context, queue, group_size, (input.length/group_size) * DIGIT_VALUES);
+		
+		CLBuffer<Integer> swap = context.createIntBuffer(Usage.InputOutput, input.length);
 		CLBuffer<Integer> buf = context.createIntBuffer(Usage.InputOutput, input.length);
+		CLBuffer<Integer> tmp;
+		
 		Pointer<Integer> ptr = buf.map(queue, MapFlags.Write, new CLEvent[0]);
 		ptr.setInts(input);
 		buf.unmap(queue, ptr, new CLEvent[0]);
 		
 		long start = System.currentTimeMillis();
+		int k = 32;
 		
 		for (int i = 0 ; i < 1000 ; i ++ )
-			
-		for (int pos = SIGNIFICANT_DIGITS ; pos >=0 ; --pos)
 		{
-			CLBuffer<Integer> positions = scan.scan(buf, pos );
-			scan.checkBuffer(positions);
-			scan.prefixSum(positions);
-			scan.checkBuffer(positions);
+			
+			for (int pos = SIGNIFICANT_DIGITS-1 ; pos >=0 ; --pos)
+			{
+				CLBuffer<Integer> positions = scan.scan(buf, pos );
+				scan.prefixSum(positions);
+				positions = scan.scanAndSwap( buf,swap, pos, positions);
+				tmp = buf;
+				buf = swap;
+				swap = tmp;
+				
+			}
 		}
 		
 		
@@ -213,33 +252,25 @@ public class PrefixScan {
 		
 	}
 
-
-	public void prefixSum(CLBuffer<Integer> buf) {
-		long  global_size = buf.getElementCount();
-		long local_size = Math.min(m_group_size, global_size);
-		long up_local_size = Math.min( global_size/2 , local_size);
+	
+	private CLBuffer<Integer> scanAndSwap(CLBuffer<Integer> input, CLBuffer<Integer> output, int position, CLBuffer<Integer> positions) {
+		if (input.getElementCount() < m_group_size) 
+			throw new IllegalArgumentException("element count is less than group size");
+		int bitshift = position * 4;
 		
-		m_prefix_sum_up.setArg(0,  buf);
-		m_prefix_sum_up.setArg(1,  LocalSize.ofIntArray(local_size));
-		m_prefix_sum_up.setArg(2,  m_sum_up_indices);
-		m_prefix_sum_up.setArg(3,  m_max_step);
-		m_prefix_sum_up.enqueueNDRange(m_queue, null,  new long[] {global_size/2} , new long[]{ up_local_size}, new CLEvent[0]);
+		m_scan_and_move_digit.setArg(0, input);
+		m_scan_and_move_digit.setArg(1, output);
+		m_scan_and_move_digit.setArg(2, bitshift); //
+		m_scan_and_move_digit.setArg(3, positions); //
+		m_scan_and_move_digit.setArg(4, LocalSize.ofByteArray(16 * m_group_size)); // - local counts
 		
-		checkBuffer(buf);
-		
-		for (int step = m_max_down ; step > 0 ; step -- )
-		{
-			m_prefix_sum_down.setArg(0,  buf);
-			m_prefix_sum_down.setArg(1,  LocalSize.ofIntArray(2 * up_local_size +1));
-			m_prefix_sum_down.setArg(2,  m_sum_down_indices);
-			m_prefix_sum_down.setArg(3,  step);
-			int cur_global_size = (int)(global_size / (1 << (step)));
-			int local =  (int)Math.min(cur_global_size,  up_local_size);
-			System.out.println( cur_global_size + "/"+ local);
-			m_prefix_sum_down.enqueueNDRange(m_queue, new long[] {1},  new long[] {cur_global_size} , new long[]{local}, new CLEvent[0]);
-			
-		}
+		m_scan_and_move_digit.enqueueNDRange( m_queue, null, new long[]{ input.getElementCount()/2 } , new long[]{Math.min(m_scan_group_size, input.getElementCount()/2 ) }, new CLEvent[0]);
+		m_queue.finish();
+		return m_digit_scan_output_buffer;
 	}
+
+	
+
 	
 	
 }
