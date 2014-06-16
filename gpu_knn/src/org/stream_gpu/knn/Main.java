@@ -37,7 +37,7 @@ public class Main {
 		int window = 512;
 		
 		int test_size = 1000;
-		int train_size = 10 * 1000;
+		int train_size = 1000 * 1000;
 		
 		CLContext context = JavaCL.createContext(null,
 				JavaCL.listPlatforms()[0].listAllDevices(false)[0]);

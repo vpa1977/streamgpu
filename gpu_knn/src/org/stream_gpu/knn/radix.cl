@@ -7,46 +7,65 @@
 						 __global uint* global_counts, // counts of digits 0=> [0 ... workgroup_count] 1=>[ workgroup_count +1... workgroup_count + workgroup_count] etc
 						  __local ushort* local_counts)  // local counts 0=>[0.. workgroup_size] 1 => [workgroup_size +1 ; workgroup_size + workgroup_size] etc
 {
-	uint workgroup = get_group_id(0);
-	uint num_workgroups = get_num_groups(0);
-	uint workgroup_size = get_local_size(0);
-	uint local_index = get_local_id(0);
-	uint mask =  (0xF << shift);
-	uint digit;
-	uint i; 
-	uint offset;
+	int workgroup = get_group_id(0);
+	int num_workgroups = get_num_groups(0);
+	int workgroup_size = 2*get_local_size(0);
+	int local_index = 2*get_local_id(0);
+	int mask =  (0xF << shift);
+	int digit;
+	int i; 
+	int offset;
 	// reset all local memory to 0
 	for (digit=0; digit < NUM_DIGITS; digit ++ ) 
 	{
 		offset = digit * workgroup_size;
 		local_counts[offset+local_index]=0;
+		local_counts[offset+local_index+1]=0;
 	}
 	barrier(CLK_LOCAL_MEM_FENCE);
 
-	digit =  (src[get_global_id(0)] & mask) >> shift;
+	digit =  (src[2*get_global_id(0)] & mask) >> shift;
 	// scan algorithm
 	// scan order - digit at digit_pos for every element of the vector
 	// local_counts - bit vectors local_count[0 ... workgroup_size] [ 0 .. NUM_DIGITS]
 	offset = digit * workgroup_size + local_index;
 	local_counts[offset]=1;
 	
+	digit =  (src[2*get_global_id(0)+1] & mask) >> shift;
+	// scan algorithm
+	// scan order - digit at digit_pos for every element of the vector
+	// local_counts - bit vectors local_count[0 ... workgroup_size] [ 0 .. NUM_DIGITS]
+	offset = digit * workgroup_size + local_index+1;
+	local_counts[offset]=1;
+	
+	 barrier(CLK_LOCAL_MEM_FENCE);
+	 for (digit = 0 ;digit < NUM_DIGITS ; digit ++)
+	 {
+		offset = digit * workgroup_size;
+		local_counts[offset + local_index] += local_counts[offset + local_index+1];
+	  }
 	 barrier(CLK_LOCAL_MEM_FENCE);
 	// local_counts reduced into global_counts
 	// global_counts  offset vector for each digit/ workgroup [0 ... num_workgroups] [ 0.. NUM_DIGITS]
  	 for (digit = 0 ;digit < NUM_DIGITS ; digit ++)
 	 {
 		offset = digit * workgroup_size;
-		for(i = workgroup_size/2; i>0; i >>= 1) {
-			 if(local_index < i) {
-				local_counts[offset+ local_index] += local_counts[offset + local_index + i];
+		for(i = workgroup_size/2; i>1; i >>= 1) {
+		    barrier(CLK_LOCAL_MEM_FENCE);
+		 	uint a = local_counts[offset+ local_index];
+		 	uint b = local_counts[offset + local_index + i];
+			 if (local_index < i ) {
+				local_counts[offset+ local_index] =a + b ;
 			 }
-			barrier(CLK_LOCAL_MEM_FENCE);
 		}
-
-	   if (local_index ==0)
-	   {
-			global_counts[ num_workgroups * digit + workgroup] = local_counts[offset];
-	   }
+	}
+	barrier(CLK_LOCAL_MEM_FENCE);
+	if (local_index == 0 ) 
+	{
+		for (digit =0; digit < NUM_DIGITS; digit ++ ) 
+		{
+			global_counts[num_workgroups * digit + workgroup] = local_counts[digit * workgroup_size];
+		}
 	}
 }
 
@@ -94,14 +113,42 @@
 
 
 
-#define k 32
-//								  // __global uint* dst,
+__kernel void adjust_k(__global uint* positions, 
+					   const uint k,
+					   const uint num_groups, 
+					   __global uint* range )
+{
+	if (get_local_id(0) > 0 )
+	{
+		uint gid = get_global_id(0)* num_groups;
+		uint gid_min = (get_global_id(0)-1)* num_groups;
+		printf("pos %d , %d \n",positions[gid-1], positions[gid]);
+		if (positions[ gid ] >= k)
+		{
+			range[0] = positions[ gid];
+			if  (positions[ gid_min ] <= k)
+			{
+				range[1] = positions[ gid_min ];
+				range[2] = positions[ gid ];
+			}
+		}
+		
+	}
+}
+					    
+
+
+
+
+					  
+
  
  __kernel void scan_and_move_digit(__global uint* src,  // source ints
  							__global uint* dst,
 							 const int shift,  // bit shift
 						 __global uint* global_counts, // counts of digits 0=> [0 ... workgroup_count] 1=>[ workgroup_count +1... workgroup_count + workgroup_count] etc
-						  __local uint* local_counts)  // local counts 0=>[0.. workgroup_size] 1 => [workgroup_size +1 ; workgroup_size + workgroup_size] etc
+						  __local uint* local_counts,  // local counts 0=>[0.. workgroup_size] 1 => [workgroup_size +1 ; workgroup_size + workgroup_size] etc
+						  __global uint* range)
 {
 	uint workgroup = get_group_id(0);
 	uint num_workgroups = get_num_groups(0);
@@ -116,12 +163,10 @@
 	for (digit=0; digit < NUM_DIGITS; digit ++ ) 
 	{
 		offset = digit * group_size;
-		barrier(CLK_LOCAL_MEM_FENCE);
 		local_counts[offset+local_index]=0;
 		local_counts[offset+local_index+1]=0;
 	}
-	barrier(CLK_LOCAL_MEM_FENCE);
-	
+	barrier(CLK_LOCAL_MEM_FENCE);	
 
 	digit =  (src[id] & mask) >> shift;
 	
@@ -135,7 +180,7 @@
 	offset = digit1 * group_size + local_index+1;
 	local_counts[offset]=1;
 
-	
+	//uint cur_digit = 1;
 	for (uint cur_digit=0; cur_digit < NUM_DIGITS; cur_digit ++ ) 
 	{
 		uint global_offset = cur_digit * group_size;
@@ -143,13 +188,14 @@
 //  see https://code.google.com/p/clpp/source/browse/trunk/src/clpp/clppScan_Default.cl?r=126        
 	    offset = 1;
 		// Build the sum in place up the tree
-		for(int d = group_size>>1; d > 0; d >>=1)
+		for(i = group_size>>1; i > 0; i >>=1)
 		 {
 		    barrier(CLK_LOCAL_MEM_FENCE);
-		    if(tid<d)
+		    if(tid<i)
 		    {
 		            int ai = offset*(2*tid + 1) - 1;
 		            int bi = offset*(2*tid + 2) - 1;
+		            ////printf("grp %d sum up %d -> %d\n", get_group_id(0) , ai, bi);
 		            local_counts[bi+global_offset] += local_counts[ai+global_offset];
 		    }
 		    offset *= 2;
@@ -157,16 +203,16 @@
 		
 	    // scan back down the tree
 	    // Clear the last element
-        if(tid == 0)
-             local_counts[group_size - 1] = 0;
-		
-	    // traverse down the tree building the scan in the place
-	    for(int d = 1; d < group_size ; d *= 2)
+		local_counts[global_offset+ group_size - 1] = 0;
+		barrier(CLK_LOCAL_MEM_FENCE);
+		 
+		// traverse down the tree building the scan in the place
+	    for(int i = 1; i < group_size ; i *= 2)
 	    {
 		    offset >>=1;
 		    barrier(CLK_LOCAL_MEM_FENCE);
 		                
-		    if(tid < d)
+		    if(tid < i)
 		    {
 		            int ai = offset*(2*tid + 1) - 1;
 		            int bi = offset*(2*tid + 2) - 1;
@@ -174,22 +220,22 @@
 		            float t = local_counts[ai+global_offset];
 		            local_counts[ai+global_offset] = local_counts[bi+global_offset];
 		            local_counts[bi+global_offset] += t;
+		           ////printf("grp %d sum down %d -> %d\n", get_group_id(0) ,ai, bi);
 		    }
 	     }
-        
 	}
-	offset = local_counts[ digit * group_size + local_index] + global_counts[ digit * num_workgroups + get_group_id(0)];
-	if (offset <= k)
-		dst[ offset ] = src[id];
-	else
-		dst[ offset ] = 0;
 
-	offset = local_counts[ digit1 * group_size + local_index] + global_counts[ digit * num_workgroups + get_group_id(0)];
+	barrier(CLK_LOCAL_MEM_FENCE);
 	
-	if (offset <= k)
-		dst[ offset ] = src[id];
-	else
-		dst[ offset ] = 0;
+	
+	offset = global_counts[ digit * num_workgroups + get_group_id(0)] - local_counts[ digit * group_size + local_index] -1;
+	printf("%d pos %d %d %d\n",digit * num_workgroups + get_group_id(0), global_counts[ digit * num_workgroups + get_group_id(0)] , local_counts[ digit * group_size + local_index],  offset);
+//	dst[ offset ] = src[id];
+	//printf("digit %d , global_count %d, local_count %d, offset %d\n", digit,global_counts[ digit * num_workgroups + get_group_id(0)], local_counts[ digit * group_size + local_index], offset );
+	
+//	offset = global_counts[digit1 * num_workgroups + get_group_id(0)] - local_counts[ digit1 * group_size + local_index+1]-1;
+//	dst[ offset ] = src[id+1];
+	
 	
 }
  

@@ -1,5 +1,7 @@
 package org.stream_gpu.knn;
 
+import java.util.Random;
+
 import org.bridj.Pointer;
 
 import com.nativelibs4java.opencl.CLBuffer;
@@ -34,8 +36,10 @@ public class PrefixScan {
 	private int m_scan_group_size;
 	
 	private CLBuffer<Integer> m_sum_down_indices;
+	private CLBuffer<Integer> m_status;
 	
 	private CLBuffer<Integer> m_sum_up_indices;
+	private CLKernel m_adjust_k;
 
 	public PrefixScan(CLContext context, CLQueue queue, int group_size, int global_size) throws Throwable 
 	{
@@ -51,6 +55,7 @@ public class PrefixScan {
 		m_prefix_sum_up = cl_program.createKernel("prefix_sum_up");
 		m_prefix_sum_down = cl_program.createKernel("prefix_sum_down");
 		m_scan_and_move_digit = cl_program.createKernel("scan_and_move_digit");
+		m_adjust_k = cl_program.createKernel("adjust_k");
 		//m_prefix_sum_up_stage_n  = cl_program.createKernel("sum_up");
 		//m_prefix_sum_down_stage_n = cl_program.createKernel("sum_down");
 		
@@ -62,6 +67,15 @@ public class PrefixScan {
 		m_prefix_sum_up.setArg(1,  LocalSize.ofIntArray(m_group_size));
 		m_prefix_sum_up.setArg(2,  m_sum_up_indices);
 		m_prefix_sum_up.setArg(3,  m_max_step);
+		
+		m_status = m_context.createIntBuffer(Usage.Input, 3);
+	}
+	
+	public void setupStatus()
+	{
+		Pointer<Integer> ptr = m_status.map(m_queue, MapFlags.Write, new CLEvent[0]);
+		ptr.setInts(new int[]{0,0});
+		m_status.unmap(m_queue, ptr, new CLEvent[0]);
 	}
 	
 	public void prefixSum(CLBuffer<Integer> buf) {
@@ -139,17 +153,17 @@ public class PrefixScan {
 			throw new IllegalArgumentException("element count is less than group size");
 		int bitshift = position * 4;
 		// 
-		if (m_digit_scan_output_buffer == null || m_digit_scan_output_buffer.getElementCount() != 16 * (input.getElementCount() / m_group_size))
+		if (m_digit_scan_output_buffer == null)
 		{
-			if (m_digit_scan_output_buffer != null)
-				m_digit_scan_output_buffer.release();
-			m_digit_scan_output_buffer = m_context.createIntBuffer(Usage.Output, 16 * (input.getElementCount() / m_group_size));
+			System.out.println("Created position buffer "+ (16 * (input.getElementCount() / (2*m_group_size))));
+			m_digit_scan_output_buffer = m_context.createIntBuffer(Usage.Output, 16 * (input.getElementCount() / (2*m_group_size) ));
 		}
 		m_digit_scan_kernel.setArg(0, input);
 		m_digit_scan_kernel.setArg(1, bitshift); //
 		m_digit_scan_kernel.setArg(2, m_digit_scan_output_buffer); //
-		m_digit_scan_kernel.setArg(3, LocalSize.ofByteArray(16 * m_group_size)); // - local counts
-		m_digit_scan_kernel.enqueueNDRange( m_queue, null, new long[]{ input.getElementCount() } , new long[]{ m_group_size }, new CLEvent[0]);
+		m_digit_scan_kernel.setArg(3, LocalSize.ofByteArray(16 * Math.min(m_scan_group_size, input.getElementCount()/2 ) *2 )); // - local counts
+		//m_digit_scan_kernel.enqueueNDRange( m_queue, null, new long[]{ input.getElementCount() } , new long[]{ m_group_size }, new CLEvent[0]);
+		m_digit_scan_kernel.enqueueNDRange( m_queue, null,new long[]{ input.getElementCount()/2 } , new long[]{Math.min(m_scan_group_size, input.getElementCount()/2 ) }, new CLEvent[0]);
 		return m_digit_scan_output_buffer;
 	}
 	
@@ -157,6 +171,9 @@ public class PrefixScan {
 	{
 		Pointer<Integer> ptr = buf.map(m_queue, MapFlags.Read, new CLEvent[0]);
 		int[] input = ptr.getInts();
+		for (int i = 0 ;i < input.length ; i ++ )
+			System.out.print(" " + input[i]);
+		System.out.println();
 		buf.unmap(m_queue, ptr, new CLEvent[0]);
 	}
 	
@@ -175,10 +192,12 @@ public class PrefixScan {
 	
 	private static void testPrefixSum() throws Throwable
 	{
-		int group_size = 4;
-		int[] input = new int[16];
+		int group_size = 256;
+		int[] input = new int[4096];
 		for (int i = 0; i < input.length; i++)
 			input[i]= 1;
+		
+		
 		
 		CLContext context = JavaCL.createContext(null,
 				JavaCL.listPlatforms()[0].listAllDevices(false)[0]);
@@ -204,16 +223,17 @@ public class PrefixScan {
 	public static void main(String[] args) throws Throwable 
 	{
 		
-		testPrefixSum();
-		
-		int[] input = new int[1024];
+			testPrefixSum();
+		Random rnd = new Random();
+		int group_size = 256;
+		int[] input = new int[4096];
 		for (int i = 0; i < input.length; i++)
-			input[i]= i;
+			input[i]= input.length - i;
 		
 		CLContext context = JavaCL.createContext(null,
 				JavaCL.listPlatforms()[0].listAllDevices(false)[0]);
 		CLQueue queue = context.createDefaultQueue();
-		int group_size = 256;
+		
 		
 		
 		PrefixScan scan = new PrefixScan( context, queue, group_size, (input.length/group_size) * DIGIT_VALUES);
@@ -227,22 +247,22 @@ public class PrefixScan {
 		buf.unmap(queue, ptr, new CLEvent[0]);
 		
 		long start = System.currentTimeMillis();
-		int k = 32;
-		
-		for (int i = 0 ; i < 1000 ; i ++ )
+		int k = 3;
+		scan.setupStatus();
+		for (int pos =0 ; pos >=0 ; --pos)
 		{
+			CLBuffer<Integer> positions = scan.scan(buf, pos );
+			scan.checkBuffer(positions);
+			scan.prefixSum(positions);
+			scan.checkBuffer(positions);
+			scan.adjust_k(k, positions, buf);
+			scan.scanAndSwap( buf,swap, pos, positions, k);
 			
-			for (int pos = SIGNIFICANT_DIGITS-1 ; pos >=0 ; --pos)
-			{
-				CLBuffer<Integer> positions = scan.scan(buf, pos );
-				scan.prefixSum(positions);
-				positions = scan.scanAndSwap( buf,swap, pos, positions);
-				tmp = buf;
-				buf = swap;
-				swap = tmp;
-				
-			}
+			tmp = buf;
+			buf = swap;
+			swap = tmp;
 		}
+		//scan.checkBuffer(buf);
 		
 		
 		long end = System.currentTimeMillis();
@@ -253,19 +273,35 @@ public class PrefixScan {
 	}
 
 	
-	private CLBuffer<Integer> scanAndSwap(CLBuffer<Integer> input, CLBuffer<Integer> output, int position, CLBuffer<Integer> positions) {
+	private void adjust_k(int k, CLBuffer<Integer> positions, CLBuffer<Integer> input) {
+		/*m_adjust_k.setArg(0, positions);
+		m_adjust_k.setArg(1, k);
+		m_adjust_k.setArg(2, (int)(input.getElementCount() / (2*m_group_size)));
+		m_adjust_k.setArg(3, m_status);
+		
+		m_adjust_k.enqueueNDRange(m_queue, null, new long[] {16},new long[]{16}, new CLEvent[0]); 
+		checkBuffer(m_status);
+		*/
+		Pointer<Integer> ptr = positions.map(m_queue, MapFlags.Read, new CLEvent[0]);
+		int[] pos = ptr.getInts();
+		positions.unmap(m_queue, ptr, new CLEvent[0]);
+		
+	}
+
+	private CLBuffer<Integer> scanAndSwap(CLBuffer<Integer> input, CLBuffer<Integer> output, int position, CLBuffer<Integer> positions, int k) {
 		if (input.getElementCount() < m_group_size) 
 			throw new IllegalArgumentException("element count is less than group size");
-		int bitshift = position * 4;
+
+			int bitshift = position * 4;
+			m_scan_and_move_digit.setArg(0, input);
+			m_scan_and_move_digit.setArg(1, output);
+			m_scan_and_move_digit.setArg(2, bitshift); //
+			m_scan_and_move_digit.setArg(3, positions); //
+			m_scan_and_move_digit.setArg(4, LocalSize.ofByteArray(16 * Math.min(m_scan_group_size, input.getElementCount()/2 )*2 )); // - local counts
+			m_scan_and_move_digit.setArg(5, m_status);
+			m_scan_and_move_digit.enqueueNDRange( m_queue,null, new long[]{ input.getElementCount()/2 } , new long[]{Math.min(m_scan_group_size, input.getElementCount()/2 ) }, new CLEvent[0]);
+			m_queue.finish();
 		
-		m_scan_and_move_digit.setArg(0, input);
-		m_scan_and_move_digit.setArg(1, output);
-		m_scan_and_move_digit.setArg(2, bitshift); //
-		m_scan_and_move_digit.setArg(3, positions); //
-		m_scan_and_move_digit.setArg(4, LocalSize.ofByteArray(16 * m_group_size)); // - local counts
-		
-		m_scan_and_move_digit.enqueueNDRange( m_queue, null, new long[]{ input.getElementCount()/2 } , new long[]{Math.min(m_scan_group_size, input.getElementCount()/2 ) }, new CLEvent[0]);
-		m_queue.finish();
 		return m_digit_scan_output_buffer;
 	}
 
