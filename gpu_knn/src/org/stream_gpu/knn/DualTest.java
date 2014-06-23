@@ -18,9 +18,10 @@ public class DualTest {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		System.out.println( System.getProperty("java.library.path"));
 		
 		int k = 32;
-		int window = 512;
+		int window = 8192*2*2*2*2;
 		
 		int test_size  = 1000;
 		int train_size = 1000000;
