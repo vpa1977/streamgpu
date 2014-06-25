@@ -4,6 +4,7 @@ import org.stream_gpu.float_knn.float_search.LinearNNSearch_Float;
 
 import weka.classifiers.lazy.IBk;
 import moa.classifiers.meta.WEKAClassifier;
+import moa.streams.InstanceStream;
 import moa.streams.generators.RandomTreeGenerator;
 import moa.tasks.EvaluatePeriodicHeldOutTest;
 import moa.tasks.NullMonitor;
@@ -17,21 +18,18 @@ public class DualTest {
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args) {
-		System.out.println( System.getProperty("java.library.path"));
+	public static void main(String[] args) throws Throwable {
 		
-		int k = 32;
-		int window = 8192*2*2*2*2;
+		int k = Integer.parseInt(args[0]);
+		int window = Integer.parseInt(args[1]);
 		
-		int test_size  = 1000;
-		int train_size = 1000000;
-		
+		int test_size  = Integer.parseInt(args[2]);
+		int train_size = Integer.parseInt(args[3]);
 		
 		
-		RandomTreeGenerator generator = new RandomTreeGenerator();
 		
-		//generator.numNumericsOption.setValue(128);
-		//generator.numNominalsOption.setValue(128);
+		InstanceStream generator = (InstanceStream)Class.forName(args[4]).newInstance();
+		
 		CLDevice device = JavaCL.listPlatforms()[0].listAllDevices(false)[0];
 		System.out.println(device.getName());
 		CLContext context = JavaCL.createContext(null,
@@ -49,7 +47,7 @@ public class DualTest {
 		wekaClassifier.baseLearnerOption.setCurrentObject(kMeans);
 		System.out.println("Test : window="+ window + " k =" + k);
 		System.out.println("	 : test_size="+ test_size + " train_size =" + train_size);
-		System.out.println("Stream: "+generator.getClass() + " "+ generator.getOptions().getAsCLIString());
+		System.out.println("Stream: "+generator.getClass());// + " "+ generator.getOptions().getAsCLIString());
 		
 		EvaluatePeriodicHeldOutTest test = new EvaluatePeriodicHeldOutTest();
 		test.streamOption.setCurrentObject(generator);

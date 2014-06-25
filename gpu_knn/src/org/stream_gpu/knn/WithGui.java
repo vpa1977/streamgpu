@@ -21,7 +21,12 @@ public class WithGui {
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
-				DualTest.main(args);
+				try {
+					DualTest.main(args);
+				} catch (Throwable e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				
 			}
 			
