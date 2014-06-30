@@ -45,6 +45,7 @@ public class PrefixScanAparapi {
 	static int SIGNIFICANT_DIGITS = 7;
 	static int DIGIT_VALUES = 16;
 	
+	
 	private class MoveDigitKernel extends Kernel 
 	{
 		public long[] src;
@@ -197,16 +198,16 @@ public class PrefixScanAparapi {
 	}
 	
 	
-	private class DigitScanKernel extends Kernel 
+	
+	private class DigitScanKernel extends Util 
 	{
 		
 		public long[] src;  // source ints
 		public int shift;  // bit shift
 		public long[] global_counts; // counts of digits 0=> [0 ... workgroup_count] 1=>[ workgroup_count +1... workgroup_count + workgroup_count] etc
-		@Local
-		public int[] local_counts;
-		
 		public static final int NUM_DIGITS = 16;
+		
+
 
 		@Override
 		public void run() {
@@ -243,30 +244,16 @@ public class PrefixScanAparapi {
 			// local_counts - bit vectors local_count[0 ... workgroup_size] [ 0 .. NUM_DIGITS]
 			offset = (int)(digit * workgroup_size + local_index+1);
 			local_counts[offset]=1;
+			 localBarrier();
+			 
 			
-			 localBarrier();
-			 
-			 for (digit = 0 ;digit < NUM_DIGITS ; digit ++)
-			 {
-				offset = (int)(digit * workgroup_size);
-				local_counts[offset + local_index] += local_counts[offset + local_index+1];
-			  }
-			 
-			 localBarrier();
 			// local_counts reduced into global_counts
 			// global_counts  offset vector for each digit/ workgroup [0 ... num_workgroups] [ 0.. NUM_DIGITS]
 		 	 for (digit = 0 ;digit < NUM_DIGITS ; digit ++)
 			 {
 				offset =(int)(digit * workgroup_size);
-				for(i = workgroup_size/2; i>1; i >>= 1) {
-				    localBarrier();
-					 if (local_index < i ) {
-					 	int a = local_counts[offset+ local_index];
-					 	int b = local_counts[offset + local_index + i];
-						 
-						local_counts[offset+ local_index] =a + b ;
-					 }
-				}
+				
+				reduce(workgroup_size, local_index, offset);
 			}
 			localBarrier();
 			if (local_index == 0 ) 
@@ -278,6 +265,7 @@ public class PrefixScanAparapi {
 			}
 
 		}
+
 		
 	}
 	
@@ -380,8 +368,8 @@ public class PrefixScanAparapi {
 	{
 		Device gpu = Device.firstGPU();
 		
-		int global_size = 128;
-		int local_size = 16;
+		int global_size = 4096;
+		int local_size = 256;
 		
 		final long[] digits_to_scan = new long[global_size];
 		for (int i = 0 ;i < digits_to_scan.length ; i ++)
