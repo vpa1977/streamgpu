@@ -31,14 +31,19 @@ public class PrintResults {
 		//		 ------Classifier:org.stream_gpu.knn.KnnGpuClassifier
 		//		 evaluation instances,total train time,total train speed,last train time,last train speed,test time,test speed,classified instances,classifications correct (percent),Kappa Statistic (percent),Kappa Temporal Statistic (percent),model training instances,model serialized size (bytes)
 		String s;
+		int window = 0;
 		while ( (s = r.readLine())  != null ) 
 		{
 			if (s.startsWith(HEADER_START))
 			{
-				System.out.println(SECOND_HEADER);
-				System.out.println(SECOND_HEADER);
+			//	System.out.println(SECOND_HEADER);
+			//	System.out.println(SECOND_HEADER);
 				mode = Mode.header;
 				first_header = true;
+				int eq = s.indexOf('=');
+				int space = s.indexOf(' ', eq);
+				window = Integer.parseInt(s.substring(eq+1, space));
+				
 			}
 			if (s.startsWith(HEADER_END))
 			{
@@ -52,7 +57,10 @@ public class PrintResults {
 				else
 					mode = Mode.idle;
 				first_header = false;
-				dumpNumbers(testingTimes, trainingTimes);
+				
+				dumpNumbers(mode, window,testingTimes, trainingTimes);
+				trainingTimes = new ArrayList<Double>();
+				testingTimes = new ArrayList<Double>();
 			}
 			
 			switch (mode)
@@ -60,10 +68,10 @@ public class PrintResults {
 			case idle:
 				break;
 			case header:
-				System.out.println(s);
+			//	System.out.println(s);
 				break;
 			case header2:
-				System.out.println(s);
+			//	System.out.println(s);
 				break;
 			case numbers:
 				collectNumbers(s,testingTimes, trainingTimes);
@@ -73,7 +81,7 @@ public class PrintResults {
 		}
 	}
 
-	private static void dumpNumbers(ArrayList<Double> testingTimes,
+	private static void dumpNumbers(Mode mode,int window, ArrayList<Double> testingTimes,
 			ArrayList<Double> trainingTimes) {
 		Collections.sort(testingTimes);
 		Collections.sort(trainingTimes);
@@ -89,8 +97,12 @@ public class PrintResults {
 //		If n is even then Median (M) = value of [((n)/2)th item term + ((n)/2 + 1)th item term ]/2
 		testMedian = median(testingTimes);
 		trainMedian = median(trainingTimes);
-		
-		System.out.println(testMedian + ","+ trainMedian);
+		if (mode.equals(Mode.idle))
+		{
+			System.out.println(testMedian + ","+ trainMedian);
+		}
+		else
+			System.out.print(window + "," + testMedian + ","+ trainMedian + ",");
 
 		
 	}
