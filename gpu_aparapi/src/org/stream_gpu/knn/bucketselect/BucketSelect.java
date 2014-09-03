@@ -4,9 +4,11 @@ import java.util.Random;
 
 import weka.classifiers.trees.m5.Values;
 
-import com.amd.aparapi.Device;
+
+
 import com.amd.aparapi.Range;
 import com.amd.aparapi.Kernel.EXECUTION_MODE;
+import com.amd.aparapi.device.Device;
 
 public class BucketSelect {
 	

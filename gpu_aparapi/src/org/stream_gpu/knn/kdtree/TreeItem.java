@@ -3,7 +3,12 @@ package org.stream_gpu.knn.kdtree;
 import weka.core.Instance;
 
 public class TreeItem {
-	public TreeItem( long id, Instance inst)
+	
+	private long m_id;
+	private GpuInstance m_instance;
+	private KDTreeNode m_owner;
+	
+	public TreeItem( long id, GpuInstance inst)
 	{
 		m_id = id;
 		m_instance = inst;
@@ -20,14 +25,28 @@ public class TreeItem {
 		return (int)m_id;
 	}
 
-	private long m_id;
-	private Instance m_instance;
-	public Instance instance() {
+	
+	public Instance instance() 
+	{
+		return m_instance.wekaInstance();
+	}
+	
+	public GpuInstance gpuInstance() {
 		return m_instance;
 	}
 
 	public long id() {
 		// TODO Auto-generated method stub
 		return m_id;
+	}
+	
+	public KDTreeNode owner()
+	{
+		return m_owner;
+	}
+	
+	public void setOwner(KDTreeNode node) 
+	{
+		m_owner = node;
 	}
 }

@@ -1,11 +1,13 @@
 package org.stream_gpu.knn.bucketselect;
 
-import com.amd.aparapi.Device;
+
 import com.amd.aparapi.Kernel;
 import com.amd.aparapi.Kernel.Local;
-import com.amd.aparapi.OpenCLDevice;
 import com.amd.aparapi.Range;
-import com.amd.aparapi.OpenCL;
+import com.amd.aparapi.device.Device;
+import com.amd.aparapi.device.OpenCLDevice;
+import com.amd.aparapi.opencl.*;
+
 
 //------------------------------------------------------------
 //Purpose :

@@ -8,6 +8,7 @@ import moa.classifiers.AbstractClassifier;
 import moa.core.Measurement;
 
 import org.bridj.Pointer;
+import org.stream_gpu.knn.kdtree.GpuInstance;
 import org.stream_gpu.knn.kdtree.KDTreeNode;
 import org.stream_gpu.knn.kdtree.KDTreeWindow;
 
@@ -161,7 +162,7 @@ public class KnnKdTreeGpuClassifier  extends AbstractClassifier {
     @Override
     public synchronized double[] getVotesForInstance(Instance inst) {
     	try {
-    		ArrayList<KDTreeNode> nodes_to_check = m_window.findNearest(inst);
+    		ArrayList<GpuInstance> nodes_to_check = m_window.findNearest(inst, m_k);
     		
     		return makeDistribution(null, null);
 		} catch (Exception e) {

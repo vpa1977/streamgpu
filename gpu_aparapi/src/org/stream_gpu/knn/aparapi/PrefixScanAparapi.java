@@ -13,17 +13,18 @@ import java.util.Random;
 
 
 
+
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane.MaximizeAction;
 
 import org.junit.Test;
 
-import com.amd.aparapi.Device;
+
+
 import com.amd.aparapi.Kernel;
 import com.amd.aparapi.Kernel.EXECUTION_MODE;
 import com.amd.aparapi.Kernel.Entry;
-import com.amd.aparapi.OpenCL.GlobalReadWrite;
-import com.amd.aparapi.OpenCL.GlobalWriteOnly;
 import com.amd.aparapi.Range;
+import com.amd.aparapi.device.Device;
 import com.nativelibs4java.opencl.CLBuffer;
 import com.nativelibs4java.opencl.CLContext;
 import com.nativelibs4java.opencl.CLEvent;

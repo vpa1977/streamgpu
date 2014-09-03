@@ -2,11 +2,9 @@ package org.stream_gpu.knn.aparapi;
 
 
 
-import com.amd.aparapi.OpenCL;
+
 import com.amd.aparapi.Range;
-import com.amd.aparapi.OpenCL.GlobalReadOnly;
-import com.amd.aparapi.OpenCL.GlobalReadWrite;
-import com.amd.aparapi.OpenCL.Local;
+import com.amd.aparapi.opencl.*;
 
 public class RadixSort {
 

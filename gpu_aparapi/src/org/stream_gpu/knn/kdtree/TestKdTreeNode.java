@@ -30,26 +30,21 @@ public class TestKdTreeNode {
 		loader.setSource(new File("test-remove.arff"));
 		Instances instances = loader.getStructure();
 		
-		KDTreeNode node = new KDTreeNode(instances, null);
-		Instance inst = null;
-		ArrayList<Instance> list = new ArrayList<Instance>();
-		long id = 0;
+		
+		Instance instTest =loader.getNextInstance(instances); 
+		KDTreeWindow window = new KDTreeWindow(16, instances);
+		
+		Instance inst;
 		while ( (inst = loader.getNextInstance(instances)) != null)
 		{
-			list.add(inst);
-			node.printRanges();
-			node.update(new TreeItem(++id,inst), null);
+			window.add(inst);
 		}
-		node.printRanges();
-		Collections.reverse(list);
-		Iterator<Instance> it = list.iterator();
-		while (it.hasNext())
-		{
-			Instance i = it.next();
-			node.update(null, new TreeItem(--id,i));
-			node.printRanges();
-		}
-		 
+		
+		int size = window.size();
+		assertEquals(size, 16);
+		
+		ArrayList<GpuInstance> list = window.findNearest(instTest, 4);
+		assertEquals(list.size(), 4);
 
 	}
 
