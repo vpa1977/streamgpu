@@ -33,8 +33,6 @@ public class KDTreeNode {
 
 	private ArrayList<TreeItem> m_values;
 
-	private int m_window_size;
-
 	public KDTreeNode(Instances dataset, KDTreeNode parent) {
 		m_parent = parent;
 		m_is_leaf = true;
@@ -100,9 +98,6 @@ public class KDTreeNode {
 		if (m_parent == null)
 			return;
 		
-		ArrayList<TreeItem> items = remove.m_values;
-		remove.m_values = null;
-		
 		KDTreeNode link;
 		if (remove == m_left)
 			link = m_right;
@@ -119,8 +114,10 @@ public class KDTreeNode {
 		else
 			throw new RuntimeException("Unable to link to parent");
 		
-		for (TreeItem item : items)
+		for (TreeItem item : remove.m_values)
 			m_parent.add(item);
+		
+		remove.m_values = null;
 		
 		this.m_parent = null;
 		this.m_left = null;

@@ -75,20 +75,11 @@ public class KnnKdTreeGpuClassifier  extends AbstractClassifier {
      * @throws Exception if computation goes wrong or has no class attribute
      */
     
-    protected double [] makeDistribution(int[] indices, CLBuffer<Float> distance_buffer)
+    protected double [] makeDistribution(ArrayList<GpuInstance> instances)
       throws Exception {
 
       double total = 0, weight;
       double [] distribution = new double [m_num_classes];
-      float[] distances = null;
-      
-      if (m_distance_weighting != WEIGHT_NONE)
-      {
-    	 distances = new float[ indices.length];
-    	 Pointer<Float> mapped = distance_buffer.map(m_sorter.getQueue(),  CLMem.MapFlags.Read, new CLEvent[0]);
-    	 mapped.getFloats(distances);
-    	 distance_buffer.unmap(m_sorter.getQueue(), mapped, new CLEvent[0]);
-      }
       
       // Set up a correction to the estimator
       if (m_class_type == Attribute.NOMINAL) {
@@ -98,15 +89,16 @@ public class KnnKdTreeGpuClassifier  extends AbstractClassifier {
         total = (double)m_num_classes / Math.max(1,m_window_size);
       }
 
-      for(int i=0; i < m_k; i++) {
+      for(GpuInstance gpu_instance : instances) {
         // Collect class counts
-        Instance current = null;//m_window.instances()[indices[i]];
+        Instance current = gpu_instance.wekaInstance();
+        float distance = gpu_instance.distance();
         switch (m_distance_weighting) {
           case WEIGHT_INVERSE:
-            weight = 1.0 / (Math.sqrt(distances[i]/m_num_attributes_used) + 0.001); // to avoid div by zero
+            weight = 1.0 / (Math.sqrt(distance/m_num_attributes_used) + 0.001); // to avoid div by zero
             break;
           case WEIGHT_SIMILARITY:
-            weight = 1.0 - Math.sqrt(distances[i]/m_num_attributes_used);
+            weight = 1.0 - Math.sqrt(distance/m_num_attributes_used);
             break;
           default:                                 // WEIGHT_NONE:
             weight = 1.0;
@@ -164,7 +156,7 @@ public class KnnKdTreeGpuClassifier  extends AbstractClassifier {
     	try {
     		ArrayList<GpuInstance> nodes_to_check = m_window.findNearest(inst, m_k);
     		
-    		return makeDistribution(null, null);
+    		return makeDistribution(nodes_to_check);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

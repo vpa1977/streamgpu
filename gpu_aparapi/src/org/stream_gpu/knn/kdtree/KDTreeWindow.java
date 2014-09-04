@@ -1,7 +1,6 @@
 package org.stream_gpu.knn.kdtree;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 
 import weka.core.Instance;
 import weka.core.Instances;
@@ -34,7 +33,7 @@ public class KDTreeWindow {
 	{
 		GpuInstance gpu_instance = m_gpu_model.createInstance(inst);
 		
-		TreeItem to_add = new TreeItem(m_current_id, gpu_instance);
+		TreeItem to_add = new TreeItem(m_current_id++, gpu_instance);
 		TreeItem to_remove = null;
 		if (m_items.size() >= m_window_size)
 		{
@@ -49,7 +48,6 @@ public class KDTreeWindow {
 	public int size() {
 		return m_root.size();
 	}
-
 	
 	public ArrayList<GpuInstance> findNearest(Instance test, int k)
 	{
@@ -58,7 +56,6 @@ public class KDTreeWindow {
 		findNearest(m_root, gpu_instance, k, h, 0);  
 		return h.toArray();
 	}
-	
 	
 	public void findNearest(KDTreeNode node, GpuInstance instance, int k, Heap heap,
 			double distanceToParents) {
@@ -109,12 +106,8 @@ public class KDTreeWindow {
 		}
 	}
 
-
 	public void print() {
 		m_root.print(System.out, 0);
 	}
 
-	
-	
-	
 }
