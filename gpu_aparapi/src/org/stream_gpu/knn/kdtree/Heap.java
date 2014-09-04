@@ -16,7 +16,7 @@ public class Heap {
 		m_queue = new PriorityQueue<GpuInstance>(k, new Comparator<GpuInstance>() {
 			@Override
 			public int compare(GpuInstance left, GpuInstance right) {
-				return -(int)(left.distance() - right.distance());
+				return left.distance() - right.distance() > 0 ? -1 : 1;
 			}
 		});
 		m_k = k;

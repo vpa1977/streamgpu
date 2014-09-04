@@ -2,6 +2,8 @@ package org.stream_gpu.knn.kdtree;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 
+import com.amd.aparapi.device.Device;
+
 import weka.core.Instance;
 import weka.core.Instances;
 
@@ -27,6 +29,9 @@ public class KDTreeWindow {
 		m_items = new ArrayDeque<TreeItem>(window_size);
 		m_window_size = window_size;
 		m_root = new KDTreeNode(dataset, null);
+		m_root.SPLIT_VALUE = window_size / 16;
+		m_root.COLLAPSE_VALUE = 1;
+		m_distance_kernel = new DistanceKernel(m_gpu_model.length());
 	}
 	
 	public void add( Instance inst)
@@ -42,7 +47,7 @@ public class KDTreeWindow {
 		}
 		m_items.add(to_add);
 		m_root.add(to_add);
-		m_distance.update(inst);
+		m_distance = null;
 	}
 	
 	public int size() {
@@ -51,6 +56,11 @@ public class KDTreeWindow {
 	
 	public ArrayList<GpuInstance> findNearest(Instance test, int k)
 	{
+		if (m_distance ==null) {
+			m_distance  = new GpuDistance(m_gpu_model);
+			for (TreeItem item : m_items)
+				m_distance.update(item.instance());
+		}
 		Heap h = new Heap(k);
 		GpuInstance gpu_instance =m_gpu_model.createInstance(test); 
 		findNearest(m_root, gpu_instance, k, h, 0);  
@@ -95,7 +105,8 @@ public class KDTreeWindow {
 		}
 	}
 
-	private void findNearestForNode(GpuInstances gpu_model, Heap heap, GpuInstance instance, KDTreeNode node) {
+	/*
+	protected void findNearestForNode(GpuInstances gpu_model, Heap heap, GpuInstance instance, KDTreeNode node) {
 		ArrayList<TreeItem> items = node.instances();
 		for (TreeItem item : items)
 		{
@@ -105,6 +116,35 @@ public class KDTreeWindow {
 			heap.add(heapEntry );
 		}
 	}
+	*/
+	protected void findNearestForNode(GpuInstances gpu_model, Heap heap, GpuInstance instance, KDTreeNode node) {
+		
+		float[] test = instance.data();
+		ArrayList<TreeItem> items = node.instances();
+		float[] values = new float[gpu_model.length() * items.size()];
+		int i = 0;
+		for (TreeItem item : items)
+		{
+			System.arraycopy(item.gpuInstance().data(), 0, values, (i++) * gpu_model.length() , gpu_model.length());
+		}
+		
+		m_distance_kernel.m_test = test;
+		m_distance_kernel.assign(values);
+		m_distance_kernel.compute(m_device);
+		
+		i = 0;
+		for (TreeItem item : items)
+		{
+			GpuInstance heapEntry = item.gpuInstance();
+			heapEntry.setDistance(m_distance_kernel.m_results[i++]);
+			heap.add(heapEntry );
+		}
+	}
+	
+	private DistanceKernel m_distance_kernel;
+	private Device m_device = Device.firstGPU();
+	
+	
 
 	public void print() {
 		m_root.print(System.out, 0);

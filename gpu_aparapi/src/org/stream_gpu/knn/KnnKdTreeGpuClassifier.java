@@ -92,7 +92,7 @@ public class KnnKdTreeGpuClassifier  extends AbstractClassifier {
       for(GpuInstance gpu_instance : instances) {
         // Collect class counts
         Instance current = gpu_instance.wekaInstance();
-        float distance = gpu_instance.distance();
+        double distance = gpu_instance.distance();
         switch (m_distance_weighting) {
           case WEIGHT_INVERSE:
             weight = 1.0 / (Math.sqrt(distance/m_num_attributes_used) + 0.001); // to avoid div by zero

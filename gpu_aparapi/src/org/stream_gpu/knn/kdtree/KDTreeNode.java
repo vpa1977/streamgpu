@@ -10,8 +10,8 @@ import weka.core.Instances;
 
 public class KDTreeNode {
 
-	public static final int SPLIT_VALUE = 4;
-	public static final int COLLAPSE_VALUE = 2;
+	public static  int SPLIT_VALUE = 4;
+	public static  int COLLAPSE_VALUE = 2;
 
 	private Instances m_dataset;
 
@@ -23,7 +23,7 @@ public class KDTreeNode {
 
 	private KDTreeNode m_parent;
 
-	private Range[] m_ranges;
+	private ValueRange[] m_ranges;
 
 	private KDTreeNode m_right = null;
 
@@ -194,9 +194,9 @@ public class KDTreeNode {
 		m_split_index = -1;
 		m_split_value = Double.MAX_VALUE;
 		m_max_distance = Double.MIN_VALUE;
-		m_ranges = new Range[m_dataset.numAttributes()];
+		m_ranges = new ValueRange[m_dataset.numAttributes()];
 		for (int i = 0; i < m_ranges.length; i++)
-			m_ranges[i] = new Range();
+			m_ranges[i] = new ValueRange();
 	}
 	
 	private void rescanRanges() {
@@ -236,7 +236,7 @@ public class KDTreeNode {
 		System.out.println("Ranges: index " + m_split_index + " value "
 				+ m_split_value + " distance " + m_max_distance);
 		int i = 0;
-		for (Range r : m_ranges) {
+		for (ValueRange r : m_ranges) {
 			System.out.println((i++) + " " + r.m_min + " <x< " + r.m_max);
 		}
 	}

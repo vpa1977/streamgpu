@@ -73,6 +73,10 @@ public class GpuInstances {
 	public int getNumericsLength() {
 		return m_numerics.length;
 	}
+	
+	public int length() {
+		return m_numerics.length + m_nominals.length;
+	}
 
 	public Instances model() {
 		return m_dataset;

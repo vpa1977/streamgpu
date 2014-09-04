@@ -11,7 +11,7 @@ public class GpuInstance {
 	private Instance m_instance;
 	private GpuInstances m_model;
 	private float[] m_values;
-	private float m_distance;
+	private double m_distance;
 
 	public GpuInstance(GpuInstances model, Instance instance, float[] values)
 	{
@@ -28,7 +28,7 @@ public class GpuInstance {
 		m_distance = d;
 	}
 	
-	public float distance() {
+	public double distance() {
 		return m_distance;
 	}
 
