@@ -1,4 +1,5 @@
 package org.stream_gpu.knn.kdtree;
+import java.awt.ItemSelectable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 
@@ -29,8 +30,8 @@ public class KDTreeWindow {
 		m_items = new ArrayDeque<TreeItem>(window_size);
 		m_window_size = window_size;
 		m_root = new KDTreeNode(dataset, null);
-		m_root.SPLIT_VALUE = window_size / 16;
-		m_root.COLLAPSE_VALUE = 1;
+		m_root.SPLIT_VALUE = Math.min(window_size / 16, 1024);
+		m_root.COLLAPSE_VALUE = Math.min(window_size / 32, 512);
 		m_distance_kernel = new DistanceKernel(m_gpu_model.length());
 	}
 	
@@ -105,8 +106,11 @@ public class KDTreeWindow {
 		}
 	}
 
-	/*
 	protected void findNearestForNode(GpuInstances gpu_model, Heap heap, GpuInstance instance, KDTreeNode node) {
+			findNearestForNodeGPU(gpu_model, heap, instance, node);
+	}
+	
+	protected void findNearestForNodeCPU(GpuInstances gpu_model, Heap heap, GpuInstance instance, KDTreeNode node) {
 		ArrayList<TreeItem> items = node.instances();
 		for (TreeItem item : items)
 		{
@@ -116,8 +120,8 @@ public class KDTreeWindow {
 			heap.add(heapEntry );
 		}
 	}
-	*/
-	protected void findNearestForNode(GpuInstances gpu_model, Heap heap, GpuInstance instance, KDTreeNode node) {
+	
+	protected void findNearestForNodeGPU(GpuInstances gpu_model, Heap heap, GpuInstance instance, KDTreeNode node) {
 		
 		float[] test = instance.data();
 		ArrayList<TreeItem> items = node.instances();
