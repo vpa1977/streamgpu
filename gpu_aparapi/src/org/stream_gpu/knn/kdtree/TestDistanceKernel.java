@@ -12,7 +12,7 @@ public class TestDistanceKernel {
 
 	@Test
 	public void test() {
-		DistanceKernel dist = new DistanceKernel(16);
+		DistanceKernel dist = new DistanceKernel(16,5);
 		
 		dist.m_input_data = new float[16];
 		dist.m_results = new float[16];
@@ -28,7 +28,7 @@ public class TestDistanceKernel {
 		Device dev = Device.firstGPU();
 		//dist.setExecutionMode(EXECUTION_MODE.JTP);
 		
-		dist.compute(dev);
+		dist.compute(dev, 16);
 		
 		assertEquals( dist.m_results[0], 16 , 0);
 	}

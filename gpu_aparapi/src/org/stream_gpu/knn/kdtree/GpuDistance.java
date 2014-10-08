@@ -1,24 +1,24 @@
 package org.stream_gpu.knn.kdtree;
 
 import com.amd.aparapi.Kernel;
-import com.amd.aparapi.opencl.OpenCL.Write;
+
 
 import weka.core.EuclideanDistance;
 import weka.core.Instances;
 
 public class GpuDistance extends EuclideanDistance {
 	
-	private RangeUpdateKernel m_range_update;
+	//private RangeUpdateKernel m_range_update;
 	private GpuInstances m_model;
 
 	public GpuDistance(GpuInstances dataset) {
 		super(dataset.model());
 		m_model = dataset;
-		m_range_update = new RangeUpdateKernel(m_model);
+	//	m_range_update = new RangeUpdateKernel(m_model);
 		
 	}
 	
-	
+	/*
 	private class RangeUpdateKernel extends Kernel 
 	{
 		
@@ -61,5 +61,5 @@ public class GpuDistance extends EuclideanDistance {
 				m_ranges[min] = value;
 		}
 	}
-
+*/
 }

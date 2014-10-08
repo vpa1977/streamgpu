@@ -3,6 +3,14 @@ import java.awt.ItemSelectable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 
+
+
+
+
+
+import org.amd.sdk.BitonicSort;
+import org.stream_gpu.knn.BitonicSortAparapi;
+
 import com.amd.aparapi.device.Device;
 
 import weka.core.Instance;
@@ -21,6 +29,7 @@ public class KDTreeWindow {
 	private long m_current_id;
 	
 	private GpuDistance m_distance;
+	private BitonicSort m_sort;
 	private GpuInstances m_gpu_model;
 	
 	public KDTreeWindow (int window_size,Instances dataset)
@@ -30,9 +39,10 @@ public class KDTreeWindow {
 		m_items = new ArrayDeque<TreeItem>(window_size);
 		m_window_size = window_size;
 		m_root = new KDTreeNode(dataset, null);
-		m_root.SPLIT_VALUE = Math.min(window_size / 16, 1024);
-		m_root.COLLAPSE_VALUE = Math.min(window_size / 32, 512);
-		m_distance_kernel = new DistanceKernel(m_gpu_model.length());
+		m_root.SPLIT_VALUE = Math.min(window_size / 16, 32528);
+		m_root.COLLAPSE_VALUE = Math.min(window_size / 32, 4096);
+		m_distance_kernel = new DistanceKernel(m_gpu_model.length(), m_gpu_model.getNumericsLength());
+		m_sort = new BitonicSort();
 	}
 	
 	public void add( Instance inst)
@@ -71,7 +81,7 @@ public class KDTreeWindow {
 	public void findNearest(KDTreeNode node, GpuInstance instance, int k, Heap heap,
 			double distanceToParents) {
 		if (node.isLeaf()) {
-			findNearestForNode(m_gpu_model, heap, instance,  node);
+			findNearestForNode(m_gpu_model, heap, instance,  node, k);
 		} else {
 			KDTreeNode nearer, further;
 			
@@ -106,8 +116,8 @@ public class KDTreeWindow {
 		}
 	}
 
-	protected void findNearestForNode(GpuInstances gpu_model, Heap heap, GpuInstance instance, KDTreeNode node) {
-			findNearestForNodeGPU(gpu_model, heap, instance, node);
+	protected void findNearestForNode(GpuInstances gpu_model, Heap heap, GpuInstance instance, KDTreeNode node, int k) {
+			findNearestForNodeGPU(gpu_model, heap, instance, node, k);
 	}
 	
 	protected void findNearestForNodeCPU(GpuInstances gpu_model, Heap heap, GpuInstance instance, KDTreeNode node) {
@@ -121,28 +131,38 @@ public class KDTreeWindow {
 		}
 	}
 	
-	protected void findNearestForNodeGPU(GpuInstances gpu_model, Heap heap, GpuInstance instance, KDTreeNode node) {
+	protected void findNearestForNodeGPU(GpuInstances gpu_model, Heap heap, GpuInstance instance, KDTreeNode node, int k) {
 		
 		float[] test = instance.data();
 		ArrayList<TreeItem> items = node.instances();
 		float[] values = new float[gpu_model.length() * items.size()];
+		int[] indices = new int[items.size()];
 		int i = 0;
+		long bc  = System.nanoTime();
 		for (TreeItem item : items)
 		{
+			indices[i] = i;
 			System.arraycopy(item.gpuInstance().data(), 0, values, (i++) * gpu_model.length() , gpu_model.length());
 		}
 		
-		m_distance_kernel.m_test = test;
-		m_distance_kernel.assign(values);
-		m_distance_kernel.compute(m_device);
-		
-		i = 0;
-		for (TreeItem item : items)
+		long bk = System.nanoTime();
+		//System.out.println("Prepare:" + (bk - bc ));
+		bk = System.nanoTime();
+		m_distance_kernel.assign(values,test);
+		m_distance_kernel.compute(m_device, k);
+		long ac = System.nanoTime();
+		//System.out.println("Compute:" + ( ac - bk ));
+		ac = System.nanoTime();
+		m_sort.sort(Device.firstGPU(), m_distance_kernel.m_results , indices);
+		for (i = 0; i < k ; i ++ )
 		{
+			TreeItem item = items.get( indices[ i ]);
 			GpuInstance heapEntry = item.gpuInstance();
-			heapEntry.setDistance(m_distance_kernel.m_results[i++]);
+			heapEntry.setDistance(m_distance_kernel.m_results[i]);
 			heap.add(heapEntry );
 		}
+		long ah = System.nanoTime();
+		//System.out.println("Sort:"+( ah - ac ));
 	}
 	
 	private DistanceKernel m_distance_kernel;

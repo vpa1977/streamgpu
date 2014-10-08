@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import com.amd.aparapi.Kernel;
 import com.amd.aparapi.Range;
 import com.amd.aparapi.device.Device;
-import com.amd.aparapi.opencl.OpenCL.Write;
 
 import weka.core.Attribute;
 import weka.core.Instance;
@@ -43,7 +42,7 @@ public class GpuInstances {
 		m_instance_size = m_numerics.length + m_nominals.length;
 		
 		
-		setDevice ( Device.firstGPU());
+		setDevice (Device.firstGPU());
 	}
 	
 	public void setDevice(Device dev)
