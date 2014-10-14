@@ -1,0 +1,40 @@
+Java HotSpot(TM) 64-Bit Server VM warning: You have loaded library /tmp/BridJExtractedLibraries1099731195499048513/libbridj.so which might have disabled stack guard. The VM will try to fix the stack guard now.
+It's highly recommended that you fix the library with 'execstack -c <libfile>', or link it with '-z noexecstack'.
+AMD A8-7600 Radeon R7, 10 Compute Cores 4C+6G
+Sample Size 256
+Hsa:947
+Seq:65
+Okra:321
+Sample Size 512
+Hsa:1370
+Seq:134
+Okra:752
+
+Sample Size 1024
+Hsa:2738
+Seq:243
+Okra:1414
+Sample Size 2048
+Hsa:5071
+Seq:497
+Okra:2344
+Sample Size 4096
+Hsa:9493
+Seq:971
+Okra:4840
+Sample Size 8192
+Hsa:18850
+Seq:1934
+Okra:7821
+Sample Size 16384
+Hsa:30796
+Seq:3949
+Okra:16180
+Java Sample Size 32768
+Java Hsa:60691
+Java Seq:13331
+Java Okra:31088
+
+C++ Sample size 32768 
+C++ OKRA elapsed time = 1485 msec
+C++ SEQ elapsed time = 10258 msec
