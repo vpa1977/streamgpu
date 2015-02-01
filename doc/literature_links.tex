@@ -1,0 +1,133 @@
+
+\documentclass[12]{article}
+\begin{document}
+The objective is to review literature related to the area of investigation: Data Stream Mining on Massively Parallel Architectures.
+
+The first step would be implementation of k-Nearest Neighbours classification algorithm, thus literature reviewed will cover:
+\begin{list}{*}{}
+\item{k-NN algorithm description}
+	http://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm 
+	wikipedia article, 
+	
+	http://ieeexplore.ieee.org/xpl/login.jsp?tp=&arnumber=1053964&url=http%3A%2F%2Fieeexplore.ieee.org%2Fxpls%2Fabs_all.jsp%3Farnumber%3D1053964
+	Original k-NN for classification
+	
+	http://dataclustering.cse.msu.edu/~cse802/Papers/FukunagaNarendra_BranchAndBoundkNN.pdf
+	Branch and bounds methods for k-NN original article
+	
+	http://www.wiley.com/WileyCDA/WileyTitle/productCd-0471056693.html
+	Textbook (nonparametric methods section) - to be used as citation source.
+	
+	http://ijcai.org/papers11/Papers/IJCAI11-222.pdf
+	Approximate search ( Locality sensivity hash, KD-tree explained)
+	LSH Page: http://www.mit.edu/~andoni/LSH/
+	
+\item{k-NN and data streams}
+	http://www.researchgate.net/publication/220966796_Efficiently_Processing_Continuous_k-NN_Queries_on_Data_Streams/file/60b7d527cea7b91f79.pdf
+	Problem: we have constant query and we need to report k nearest neighbors for this query, e.g. network intrusion detection. 
+	Thus we do not keep stream ``window'' and just keep those items which may become nearest neighbors. 
+	
+	http://ww2.cs.mu.oz.au/~rui/subjects/COMP90005SummerSubject2013/PresentationPaperSelection/Vldb2004_ApproximateNN.pdf
+	Approximate method for data streams - find k neighbors with error e
+	
+		
+
+\item{General GPU programming introduction}
+	
+	http://cs.utsa.edu/~qitian/seminar/Spring11/03_04_11/GPU.pdf
+	Introduction talk, covers architecture, programming model and some case studies.
+	
+	http://cees.stanford.edu/docs/CEESWorkshop8-HFu.pdf
+	Comparison of GPU vs FPGA, contains good slides illustrating GPU computing
+
+	http://http.developer.nvidia.com/GPUGems2/gpugems2_chapter33.html
+	GPU Gems - general programming guide
+	
+\item{Machine Learning and GPUs - data representation on GPU and various tricks}
+	https://code.google.com/p/gpuminer/
+	An implementation of k-Means and Apriori algorithms. An instance is represented as an array of floats and all data is sent to GPU memory. Bitmap is used to establish association between data points and centroids for k-Means.
+	
+	http://hgpu.org/?p=11053
+	Map-Reduce on GPU - Probably hadoop/storm integration can be done in a fashion described here. 
+	
+	http://www.inf.fu-berlin.de/lehre/SS10/SP-Par/download/k-means2.pdf
+	Mining massive data sets, discusses large data sets problems ( split the data/process it iteratively approach)
+	
+	http://www.cs.berkeley.edu/~jfc/papers/13/BD.pdf
+	Talks about loop interleaving - Butterfly mixing (see Figure 3), thus reducing time for reduce phase. Source code:  https://github.com/BIDData
+	
+	http://stanford-ppl.github.io/Delite/optiml/
+	DSL for Machine Learning on GPU. ( maybe worth trying, though may be limited/bugged/too hard to use)
+	
+	http://patternsonascreen.net/cuSVM.html
+	cuSVM - GPU implementation of SVM ( check implementation )
+
+\item{Machine Learning and GPUs - k-NN implementation on GPU}
+	
+	http://www.plosone.org/article/info%3Adoi%2F10.1371%2Fjournal.pone.0074113#abstract0
+	Efficient Computation of k-Nearest Neighbour Graphs for Large High-Dimensional Data Sets on GPU Clusters. Discusses data partitioning and parallel k-NN implementaiton
+	Master thesis on the same topic : http://dc.uwm.edu/cgi/viewcontent.cgi?article=1285&context=etd
+		
+	
+	http://www.academypublisher.com/proc/iscsct09/papers/iscsct09p151.pdf
+	A Practical GPU Based KNN Algorithm. For the sorting phase we use Bitonic sort (http://en.wikipedia.org/wiki/Bitonic_sorter, article http://sunsite.informatik.rwth-aachen.de/Publications/CEUR-WS/Vol-480/paper4.pdf)
+	
+		
+
+\item{Machine Learning and GPUs - online k-NN implementation }
+
+
+......
+
+\paragraph{GPU computing and its challenges}
+		Overview
+		http://www.davidglasco.com/Papers/ieee-micro.pdf
+		http://cs.utsa.edu/~qitian/seminar/Spring11/03_04_11/GPU.pdf
+		http://cees.stanford.edu/docs/CEESWorkshop8-HFu.pdf
+		No `good` compiler
+		http://www.cs.unc.edu/Events/Conferences/GP2/slides/Cooper.pdf
+	\subparagraph{Massively Parallel}
+	\subparagraph{Bandwidth limitations}
+	\subparagraph{Vendor specific - CUDA vs OpenCL}	
+	
+\paragraph{GPU computing for data mining}
+
+https://code.google.com/p/gpuminer/
+
+Parallel data mining techniques on Graphics Processing Unit with Compute Unified Device Architecture (Apriori, K-Top, KNN, K_Means)
+( Slide http://on-demand.gputechconf.com/gtc/2012/posters/P0212_ParallelDataMining_Liheng_Jian.pdf )
+
+Framework for mapping data mining applications on GPU ( Lets compare several approaches to apriori implementation)
+
+Some library in scala - implements scalable framework - look at GPU-CPU integration methods ( https://github.com/BIDData ) 
+
+http://www.springer.com/computer/ai/book/978-3-540-88191-9 - an article about iterative svm algorithm
+
+
+http://hgpu.org/?p=11053 ( FRAMEWORK !!!!)
+
+totally unrelated by probably fun read http://metislogic.net/thesis.pdf
+
+CUDA random forest (https://github.com/deeplearningais/curfil)
+
+Data Structure Layout - http://hgpu.org/?p=11440
+
+KNN GPU - http://hgpu.org/?p=11433
+
+GLIDE - Thesis - may use some refs/pictures from it. - http://hgpu.org/?p=8217
+
+One more thesis - tree and regression - http://dame.dsf.unina.it/documents/TESI_GAROFALO_FINALE.pdf
+
+
+OptiML - DSL for machine learning and OpenCL http://stanford-ppl.github.io/Delite/optiml/
+
+
+
+http://hgpu.org/?cat=73&tag=Package
+
+
+\paragraph{GPU computing for data stream mining - online algorithms on GPU}
+
+\end{list}
+
+\end{document}
