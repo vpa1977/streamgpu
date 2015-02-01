@@ -170,7 +170,7 @@ public class BitonicSort {
 				workgroup_size  = l;
 			}
 		}
-		return workgroup_size;
+		return Math.min(512,workgroup_size);
 	}
 	
 	public static String readKernel(String name) throws Exception {
