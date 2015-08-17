@@ -41,7 +41,9 @@ public class BitonicSort {
     	try {
     		source = readKernel("sort.cl");
     	} catch (Exception e){ e.printStackTrace();}
+    	
 		CLProgram program  = m_context.createProgram(source);
+		
 		// create sort kernels
 		m_sort_init = program.createKernel("bsort_init");
 		m_sort_stage_0 = program.createKernel("bsort_stage_0");
