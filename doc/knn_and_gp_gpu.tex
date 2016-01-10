@@ -1,0 +1,635 @@
+\chapter{k-Nearest Neighbours}
+
+\section*{Problem Statement}
+ 
+k-Nearest Neighbours method is a non-parametric method used for the classification and regression. It computes a given instance distance to the examples with the known label and either provides a class membership for the classification which is a class most common among nearest neighbours or an object property value which is an average of the nearest neighbours. 
+The error rate bound by twice the Bayes error if the number of examples approaches infinity.
+The naive approach computes distance to each example and has computational complexity  $ O(N^{d}) $ where N - number of examples and d - cardinality of the example.
+The method optimizations deal with organizing the search space to reduce
+complexity associated with distance calculation. Examples would be branch
+and bounds methods such as kd-tree that partition search space, and approximate
+methods, e.g. locality sensivity hash that simplifies the distance function by
+mapping instances into lower dimensional space preserving their pair-wise distances within the certain error margin. 
+
+\paragraph*{Exhaustive search} 
+The exhaustive search approach consists of distance
+calculation and selection phase.The distances to the query a computed as a
+vector-matrix multiplication or if several queries are processed at once as a
+matrix-matrix multiplication. GPU implementation of those routines is available
+as a part of libraries implementing BLAS\cite{cuBLAS}\cite{clBlas}\cite{ViennaCL}. The selection phase finds nearest to the query out of all the computed distances. Sismanis et.
+al\cite{Sismanis2012} provide time complexity of reduced sort algorithms and evaluates their performance on GPU, proposes to interleave distance calculation and sorting phases to hide latency - the data for the distance calculation should be offloaded to GPU while it performs the sorting phase. The input data in the brute-force approach is partitioned according to the GPU memory capabilities and does not use examples's spatial information.
+
+\paragraph*{Space parititioning methods} 
+
+The space paritioning techinques are widely used to limit number of distance
+calculations needed for nearest neighbour search. The most famous are $ k-d $
+tree, ball tree and cover tree.
+
+\subparagraph*{K-D Trees}
+ 
+The $ k-d $ tree \cite{(Friedman et al., 1977} is a balanced binary tree where each node
+represents a set of points $ P\in\langle p_1 \cdot p_n \rangle $ and its
+children are disjoint and almost equals sized subsets of $ P $. The tree is constructed
+top-down, the initial set of points is split along the widest dimension or using
+other criteria until the predefined number of points in child nodes is reached.
+The tree can be constructed in $ O(n log n)$ time and occupies linear space.
+Weber $ et al $\cite{Weber:1998:QAP:645924.671192} have shown that  $ k-d $
+tree is outperformed by the exact calculation at moderate dimensionality (
+$ n > 10 $ ) and results in full processing of the data points if the number of
+dimensions is large enough.
+The $ k-d $ tree requires $ N \gg 2^k $ points to be more effective than exhaustive
+search.
+
+ \begin{figure}[htp]
+ 	\begin{lstlisting}
+		tree_node create_tree(pointList, level)
+		{
+			int dim = select_dim(pointList); // select split dimension according to 
+											 // pre-defined criteria, e.g. level mod total_dimensions
+			splitVal = select_split_value( pointList, dim); // select split value
+															// according to pre-defined criteria
+															// e.g. median value of point[dim]
+			left = {};
+			right = {}
+			for (point : pointList ) 
+			{
+			     if (point[dim] > splitVal) 
+			        right += point;
+			     else
+			     	left += point;
+			}
+			node = {
+				.location = splitVal,
+				.dim = dim,
+				.left = create_tree(left, level + 1),
+				.right = create_tree(right, level + 1) 
+			};
+			return node;
+		}
+		
+		void search(Heap nearest_neighbours, tree_node root, point p) 
+		{
+			if (root.is_leaf()) 
+			{
+				nearest_neighbours.update(root);
+			}
+			else
+			{
+				split = root.location;
+				dim = root.dim;
+				if (p[dim] < split ) // search "closest" node
+					search(nearest_neighbours, root.left, p) 
+				else
+					search(nearest_neighbours, root.right, p)
+					
+				distance_to_split_plane = abs(split-p[dim]); 
+				distance_to_point = abs(nearest_neighbours.furtherst_point()[dim]-p[dim]) 
+				if (distance_to_point >=distance_to_split_plane) // outer radius of NN heap
+				intersects the split plane
+				{
+					if (p[dim] < split ) 
+						search(nearest_neighbours, root.right p) 
+					else
+						search(nearest_neighbours, root.left, p)
+				}
+					
+				
+			}
+		}
+		
+	\end{lstlisting}
+	\caption{\label{k-d tree pseudocode} k-d tree construction and NN-search
+	pseudocode}
+\end{figure}
+The listing of the $ k-d $ tree construction and nearest neighbours search
+pseudocode is shown in the Figure \ref{k-d tree pseudocode}.
+The parallel $ k-d $ tree construction on GPU utilizes breadth-first
+approach\cite{Zhou}\cite{Shevtsov_highlyparallel} - the $ k-d $ tree is
+constructed top-down with the split criteria computed in parallel for all nodes
+at the specific level.
+The standard nearest neighbours search using k-d trees does not benefit much
+from the GP GPU parallelism due to the branch divergence and irregular memory access
+patterns\cite{gieseke2014buffer}. The $ k-d $ tree search approach presented by
+Gieske et. al focuses on parallel execution of nearest neighbour queries in a
+lazy fashion. The query points are accumulated in the leaf nodes of the kd-tree until enough of them is present and then processed as a batch. This solves an issue of the GPU underutilization and low performance if leaf nodes are processed sequentially for each example\cite{gieseke2014buffer}.
+
+This work proposes parallel evaluation of the $ k-d $ tree for a single query.
+The tree is built as normal using algorithm in Figure \ref{k-d tree
+pseudocode}.Then each node split is evaluated against data points and a data
+point hash code is composed $ C = {c_0, \ldots , c_p} bits, p =
+2^{tree_levels-1} - 1 $. $c_i$ is $ 1 $ if split criteria is evaluated to true and false otherwise. 
+The query is performed by calculating a point hash code and distances to each
+split plane. 
+The algorithm then calculates distances to the points with the matching hash
+code and if the distance to the furtherst $k-th$ point is greater than distances
+to the split planes, searches points in the opposite splits by flipping
+corresponding bits and repeating the brute-force distance calculation.
+The distance calculation is performed by assigning a workgroup to calculate the
+single distance thus the thread divergence is not an issue. 
+
+\subparagraph*{Random Projection Trees}
+
+The $ k-d $ tree provides effective partitioning mechanism for
+low data dimensionality. Many machine learning problems that are expressed
+in high dimensional space has lower intrinsic dimension as shown in Figure
+\ref{IntrinsicDimension}. 
+\begin{figure}[htp] \resizebox{1\textwidth}{!}{
+		\includegraphics[width=\textwidth]{data_with_low_intrnsic_dimension.png}
+		}
+	\caption{\label{IntrinsicDimension}Distributions with low intrinsic dimension. The purple areas in these figures indicate regions in which
+the density of the data is significant, while the complementary white areas indicate areas where data density is very
+low. The left figure depicts data concentrated near a one-dimensional manifold. The ellipses represent mean+PCA
+approximations to subsets of the data. Our goal is to partition data into small diameter regions so that the data in each
+region is well-approximated by its mean+PCA. The right figure depicts a situation where the dimension of the data is
+variable. Some of the data lies close to a one-dimensional manifold, some of the data spans two dimensions, and some
+of the data (represented by the red dot) is concentrated around a single point
+(a zero-dimensional manifold). Reproduced from Learning the structure of
+manifolds using random projections by Freund Yoav et
+al.\cite{FreundManifoldRandomProjection} }
+\end{figure}
+Random projection tree exploits this fact by splitting data along randomly
+chosen unit vectors as opposed to splitting along dimension
+axises in $ k-d$ tree method as shown in
+Figure \ref{RPTree}\cite{FreundManifoldRandomProjection}. The method performs a
+one dimensional random projection of the data points and splits them at 
+the median of the projections.  
+
+\begin{figure}[htp] \resizebox{1\textwidth}{!}{
+		\includegraphics[width=\textwidth]{kd_tree_rp_tree.png}
+		}
+	\caption{\label{RPTree} Left: Partitioning produced by k-d tree. Right:
+	Partitioning produced by Random Projection Tree. Reproduced from Learning the
+	structure of manifolds using random projections by Freund Yoav et al.\cite{FreundManifoldRandomProjection} }
+\end{figure}
+
+ \begin{figure}[htp]
+ 	\begin{lstlisting}
+ 		tree_node random_tree_max(pointList, num_dimensions) 
+ 		{
+ 			v = random_vector(num_dimensions); 
+ 			
+ 			x = pointList[ random() ];
+ 			y = max (distance( y in pointList, x) );
+ 			sigma = uniform_random(-1;1) * 6 * distance(x,y) / sqrt(num_dimensions);
+ 			split = median ( dot(v, x in pointList)+ sigma ) ;
+ 			left = {}
+ 			right = {}
+ 			for (x in pointList) 
+ 			{
+ 				if (dot(v,x) <= split) 
+ 					left += x;
+ 				else
+ 					right +=x;
+ 			}
+			node = {
+				.vector = v,
+				.split = split,
+				.left = create_tree(left, num_dimensions),
+				.right = create_tree(right, num_dimensions) 
+			};
+			return node;
+ 		}
+ 		
+ 		tree_node random_tree_mid(pointList, num_dimensions, c) 
+ 		{
+ 			diameter = max( distance(x in pointList, y in pointList)); 
+ 			avg_diameter = mean(distance(x in pointList, y in pointList));
+ 			if ( diameter <= c* avg_diameter) 
+ 			{
+ 				v = random_vector(num_dimensions);
+ 				split = median( dot(x in pointList, v) );
+ 				left = {}
+ 				right = {}
+ 				for (x in pointList)
+ 				{
+	 				if (dot(v,x) <= split) 
+	 					left += x;
+	 				else
+	 					right +=x;
+	 			}
+				node = {
+					.rule_type = dotproduct
+					.vector = v,
+					.split = split,
+					.left = create_tree(left, num_dimensions),
+					.right = create_tree(right, num_dimensions) 
+				};
+				return node;
+ 			}
+ 			else
+ 			{
+ 				meanPoint = mean(x in pointList)
+ 				split = median( distance(x in pointList, meanPoint);
+ 				left = {}
+ 				right = {}
+ 				for (x in pointList)
+ 				{
+	 				if (distance(x, meanPoint) <= split) 
+	 					left += x;
+	 				else
+	 					right +=x;
+	 			}
+				node = {
+					.rule_type = distance
+					.mean = meanPoint,
+					.split = split,
+					.left = create_tree(left, num_dimensions),
+					.right = create_tree(right, num_dimensions) 
+				};
+				return node;
+ 				
+ 			}
+ 		}
+ 	\end{lstlisting}
+	\caption{\label{random projection tree pseudocode} Random Projection Tree
+	Pseudocode\cite{Dasgupta:2008:RPT:1374376.1374452} }
+\end{figure}
+ 	
+The random projection tree split rules are presented in Figure \ref{random
+projection tree pseudocode}. 
+
+The NN-search procedure is identical to $ k-d $ tree. 
+Random Projection Tree construction is computationally more intensive than $
+k-d $ tree split, though it consists of GP GPU-friendly operations.
+\textit{Explain.}Random Projection Tree NN-search implementation on GP GPU will
+have same restrictions as $ k-d $ tree.
+
+
+\subparagraph*{Ball tree}
+Ball tree\cite{Omohundro,1989} is a simplest and oldest data structure suitable
+for data represented in arbitrary metric space - data points $ \mathbb{X}
+$ with defined distance function $ d : \mathbb{X} \times \mathbb{X} ->
+\mathbb{R}^+ $. The data points are bounded by
+the tree hierarchy of hyperspheres as opposed to hyper-rectangles in $ k-d $
+tree.The hyperspheres are allowed to overlap, the data points are
+assigned only to one hypersphere.
+At the time of writing there were no widely known GPU-based ball tree
+implementation though $k-d$ tree limitations such as branch divergence and
+irregular memory access for the tree traversal should apply to the ball tree
+algorithm as well.
+
+\subparagraph*{Cover tree}
+Cover tree\cite{beygelzimer2006cover} is a $N-$ary tree also suitable for the
+data represented in arbitrary metric space. The tree is defined recursively -
+at the top level the initial point is arbitrary picked from the data set and
+covered by the ball with radius $ 2^i $. The $ i $ is picked so that the
+ball covers all data points. On the next level the ball radius is $ 2^(i-1) $ and any points outside this radius generate their own cover
+balls. The initial ball is assigned as their parent. The process continues until
+each ball contains exactly one point. The cover tree satisfies following
+invariants:
+\begin{itemize}
+  \item Nesting - once point is associated with node  at level $ i $ any
+  level $ j < i $ will have  a node associated with this point
+  \item Covering - the parent node at level $ i $ covers all its child nodes
+  \item Separation - the distance between centers of two distinct nodes at the
+  same level is more than node radius.
+\end{itemize} 
+  
+ The nearest neighbours query process is iterative. For the query
+point $ p $ and $ Q = { Children(q) : q \in Q_i } $ children of the node $ Q_i $ we form a ball
+that includes its children satisfying following condition 
+$ Q_{i-1} =  \{q \in Q : d(p,q) \leq min_{q\in Q} d(p,Q) +2^i  \} $
+\cite{beygelzimer2006cover}.Thus on each step next level query
+radius to the distance to the center of the nearest ball plus its radius $ 2^i $. It should be noted that in practice
+the radius is redefined as $ 1.3 ^ i $ as it yields better
+results\cite{izbickifaster}.  
+The cover tree construction can be performed using breadth-first search approach
+to perform contstruction iteratively similiar to $ k-d $ tree iterative construction\cite{sharma2010design}.
+
+\subparagraph*{Nearest Ancestor Tree}
+The \textit{nearest ancestor tree} is a simplification of
+the cover tree\cite{izbickifaster}.
+The \textit{simplified cover tree} is a cover tree without nesting invariant.
+Simplified cover tree explicitly defines \textit{level} invariant - each node
+has associated integer level and for any child node $ q $ with parent $ p $ $ level(q) = level(p) - 1 $. 
+The \textit{nearest ancestor tree} is defined as a simplified cover tree with
+nearest ancestor invariant - the maximum distance from the parent to the child
+nodes is minimized -  for parent $ q_1 $ its sibling $ q_2 $ and a child node $
+p $, $ d(q_1, p) \leq d(q_2, p)$\cite{izbickifaster}.
+The nearest ancestor tree requires rebalancing when a new node is inserted if
+this invariant is violated. 
+The nearest ancestor tree construction requires significantly more distance
+calcuation than cover tree, but this is offset by better NN query in most
+cases\cite{izbickifaster}.
+The parallelisation approach for nearest ancestor tree construction - divide the
+data set, construct individual trees and merge the results.  
+
+\subparagraph*{Random Ball Cover}
+The hypersphere bounding is used in \textit{Random Ball Cover}
+method\cite{Cayton6267877}. It provides a single level metric space cover. For
+the initial set of points $ \mathbb{X} = \{ x_1, \ldots , x_n \} $ 
+random $ O(\sqrt{n}) $ points are selected to act as representatives and 
+$ L $ points to them are attached to them and denoted $ L_r $ -
+\textit{ownership list} of representative $ r $.
+The method defines two algorithms:
+\begin{itemize}
+  \item one-shot - representatives are chosen at random, and $ s $ closest
+  points are put into ownership list $ L_r $ and the data point may be owned by
+  several representatives. To perform a query a distance is computed to each
+  representative point, closest one taken and $ k $ closest points are selected from its ownership list. 
+  \item exact - the exact search computes distances to all representative points
+  and selects closest one $ r_q $. The algorithm then considers representative
+  points that satisfy following inequalities:
+  \[
+  \left\{
+  \begin{array}{ll} 
+  \ d(r,q)  \leq< 3 d(r_q, q) \\
+  \ d(r,q)  < d(r_q, q) + \psi_{r}   
+ \end{array}
+ \right.
+  \]
+  where $ d(r,q) $  - distance between representative and query point, $
+  \psi_{r} $ - distance between represetnative points and furtherst point from
+  ownership list. The ownership lists of those points are brute-force searched
+  for $ k $ nearest neighbours.
+  
+\end{itemize} 
+
+The random ball cover method queries are easily paralellised as they consists
+of existing brute-force kNN search and scan stage to establish representative
+points of interest for the exact method\cite{Cayton6267877}. 
+\textit{TODO - theoretical guarantees}
+
+\paragraph*{Approximate methods}
+
+The nearest neighbours search methods in high dimensional space provides little
+benefit over exhaustive search where an exact distance is computed to each point
+in the
+database\cite{Weber:1998:QAP:645924.671192}\cite{Andoni:2008:NHA:1327452.1327494}.
+The approximate methods provide means to overcome this limitation by solving the
+problem of finding neighbours whose distance from the query point are at most $
+c > 1 $ times greater than distance to the closest neighbour. The approximate
+solution can be used to find exact one by computing distance to each approximate
+nearest neighbour and choosing closest ones.
+
+\subparagraph*{Random Projection}
+
+Seminal paper by Johnson and Lindenstrauss\cite{johnson84extensionslipschitz}
+established that for euclidian spaces any $ x \in \mathbb{R}^n $ can be embedded
+into $ \mathbb{R}^k $ with $ k = O(log n/\epsilon^2)$ by projecting $ x $
+in $ \mathbb{R}^k $ using projection $ k \times n $ matrix $ \Phi $  without
+distorting inter-point distances by more than $ (1\pm\epsilon) $ and $ k \geq
+O(log n)$.  Johnson and Lindenstrauss\cite{johnson84extensionslipschitz} has
+shown that Johnson-Lindenstrauss condition holds for matrices with following
+properties:
+\begin{blockquote}
+  Spherical symmetry - For any orthogonal matrix $ A \in O(d), \phi A and \phi $ have the same distribution.
+  Orthogonality - rows are orthogonal to each other
+  Normality - the rows are unit-length vectors
+\end{blockquote}\cite{ailon2009fast}
+
+The lower bound of $ k $ was refined by in
+several papers\cite{frankl1988johnson}\cite{Dasgupta:2003:EPT:639790.639795}\cite{Indyk:1998:ANN:276698.276876}\cite{Achlioptas:2003:DRP:861182.861189} and with Dasgupta and Gupta\cite{Dasgupta:2003:EPT:639790.639795} proving it to be $ k \geq 4 (\epsilon^2/2 - \epsilon^3/3)^-1 ln n for \epsilon \in (0,1) $.
+For high $ n $ this bound will still be too large to effectively employ low
+dimensionality search methods such as $ k-d $ tree. An alternative would be to
+utilize very low dimensional space and then use disjunction to find desired
+result. This approach is essentially an iterative random projection tree search
+where the dataset is split along leaf nodes.
+
+The efficient implementation of the random projection-based
+algorithms requires a simple approach to construct $ \phi $ and a way to compute
+projection faster than naive multiplication of data point by $k \times n $
+matrix.
+Achlioptas\cite{Achlioptas:2003:DRP:861182.861189} achieved relatively sparse
+transformation matrix for random projection by proving that
+Johnson-Lindenstrauss condition holds if elements of the projection matrix
+are chosen independently according to the following distribution:
+\[
+\left \{ 
+\begin{array}{lll} 
+  \ +(n/3)^{-1/2}, P =  1/6 \\
+  \ 0, P = 2/3 \\
+  \ -(n/3)^{-1/2},P = 1/6   
+ \end{array}
+ \right.
+\]
+This method provides a 3-fold speedup over originally
+proposed\cite{johnson84extensionslipschitz} since $ 2/3 $ of the transformation
+matrix elements are zero.
+Nir Ailon and Edo Liberty\cite{ailon2013almost} have developed an almost optimal
+random projection transformation with runtime of $ O(n log n)$ as opposed to $ O(kn) $
+of the naive implementation. The main idea of the method is the application of
+the Heisenberg principle in its signal processing interpretation that both
+signal and its spectrum can not be both sharply localized. \textit{TODO:finish
+description of 2013 method - multiply by +-1 diagonal matrix, apply FFT and
+normalization constant and then randomly select k results to obtain projection.
+Reference implementation: https://github.com/gabobert/fast-jlt/tree/master/fjlt}
+
+This implementation is well suited for GPU implementation as it consists of FFT
+followed by element-wise operation and scatter parallel primitives.
+Figure \ref{Fast Johnson-Lindenstrauss transform} shows comparative performance
+of dense matrix multiplication for random projection and Fast
+Johnson-Lindenstrauss transform. For the selected hardware configuration the
+latter starts to outperform matrix multiplication starting from $ N \geq 16384
+$. It should be noted that FLJT has lower memory requirements than
+\textit{O(kd))} as it does not require to store dense transformation matrix and
+thus capable of projecting higher dimensional data on the same hardware.
+
+ \begin{figure}[h]
+ \centering
+ \begin{gnuplot} 
+  set terminal epslatex color size 15cm,12cm
+  set style line 1 lt 1 lw 4 lc rgb '#4682b4' pt -1 
+  set style line 2 lt 1 lw 4 lc rgb '#ee0000' pt -1 
+  set style line 3 lt 1 lw 4 lc rgb '#008800' pt -1
+  set style line 4 lt 1 lw 4 lc rgb '#00aaaa' pt -1
+  set style line 5 lt 1 lw 4 lc rgb '#cc0000' pt -1
+  set xlabel '$ 2^{Vector Size} $'
+  set ylabel '$ Execution Time (msec) $'
+  set xtics 1
+  set key right top
+  plot 'data/random_projection/fast_random_projection_vs_naive.data' using 1:3 with lines ls 1 ti '$ Fast JLT $',\
+       'data/random_projection/fast_random_projection_vs_naive.data' using 1:4 with lines ls 2 ti '$ Matrix Multiplication $' 
+\end{gnuplot}
+
+ \caption{\label{Fast Johnson-Lindenstrauss transform} Fast
+ Johnson-Lindenstrauss transform vs. dense matrix implementation using ViennaCL.
+ Test configuration GPU R9 390, CPU AMD A8-7600, AMD Catalyst version 15.20.}
+\end{figure}
+
+ 
+
+\subparagraph*{Locality Sensivity Hashing}
+Locality Sensivity Hashing\cite{Indyk:1998:ANN:276698.276876} is a method that
+captalizes on the idea that exist such hash functions $ h(x), x \in
+\mathbb{R}^d $ that for  points $p,q \in \mathbb{R}^d $, radius $ R $ and
+approximation constant $ c $
+\[
+\left \{ 
+\begin{array}{ll} 
+  \|p-q\| \leq R,  P[h(p) = h(q)] \geq P_1  \\
+  \|p-q\| \geq cR, P[h(p) = h(q)] \leq P_2   
+ \end{array}
+ \right.
+\]
+where probabilty $ P_1 > P_2 $.
+The LSH algorithm uses a concatenation of $ M \ll d $ such functions to increase
+difference between $P_1$ and $P_2$\cite{Indyk:1998:ANN:276698.276876}. Initially
+it was proposed to use Hamming distance as this function satisfies required
+properties\cite{Indyk:1998:ANN:276698.276876}. Later it was shown that other
+families of hash functions such as $ l_p $
+distance\cite{Datar:2004:LHS:997817.997857}, Jaccard coefficient
+\cite{Broder:1997:SCW:283554.283370}\cite{Broder:1997:SCW:283202.283370},
+angular distance(random projection)\cite{Charikar:2002:SET:509907.509965} are
+locally sensitive.
+The algorithms selects $ L $ contactenations of the hash functions and uses them
+to  transform input dataset points $ v \in \mathbb{R}^d $ into lattice space $
+\mathbb{Z}^M$ storing them as $ L $ hash tables. 
+The exact query is performed by contactenating contents of the $ L $ bins
+corresponding to the hash codes of the query and computing exact distance. The
+approximation is obtaining by stopping as soon as $ k $ points in $ cR $
+distance from the query point is found. 
+
+
+\subparagraph*{Space filling curves}
+\textit{TODO}
+The local neighbourhood of the data point in N dimensional space can be
+established via computation of the z-order. The z-order is a space-filling curve computed via sorting points according to their Morton Code. The Morton Code is computed as a bit interleave of the data point coordinates.
+
+The computation of the morton code in original high dimensional space is both impractical due to the curse of dimensionality and  computational complexity - the cost of the code computation and comparison is linear.
+
+Thus it is possible to create a faster approximate k-NN algorithm by exploiting both logarithmic complexity of the fast Johnson-Lindenstrauss transform (logarithmic), reduced number of points needed for distance calculation and overall faster computation in lower dimensional space.  
+
+\textit{TODO:The algorithm below is very similiar to the one described in 
+Bi-level Locality Sensitive Hashing for K-Nearest Neighbor Computation/Fast
+GPU-based Locality Sensitive Hashing for K-Nearest Neighbor Computation
+(gamma.cs.unc.edu/KNN). I have not found use of the z-order curve in the code,
+neither the generic morton code algorithm. The improvements could be - use of FJLT as opposed to matrix-vector
+multiplication for computing 1-D projections, project to k = sqrt(n) and compute
+z-order curve over all dataset as opposed to building e8 lattice in the
+individual leaves (not found in code either), use z-order curve to locate
+closest tree leaves. }
+
+\begin{itemize}
+\item random projection tree partitions the search space. use the parallel tree
+search.
+\item The NN candidates of the query point can be determined by computing a hash function that preserves relative distance between points
+\item Morton code is a hash function computed by interleaving bits of the feature vector
+\item Morton code creates a space filling curve (z-order curve) with following property - it never doubles up (definition)
+\item Pick k nearest neighbour candidates by following z-order curve, compute bounds of a hypercube and this hypercube will contain all possible NN candidates.
+Limit those to ones with distance to the split plane less than 
+\end{itemize} 
+
+\textit{TODO:Update text below}
+
+\section*{Algorithm Implementations}
+\paragraph*{Brute-Force Approach}
+The algorithm maintains a sliding window of examples, calculates distance to the query point for each example and sorts them according to the least distance selecting nearest $k$ neighbours.
+\subparagraph*{Sliding Window}
+The sliding window is implemented as a FIFO cyclic buffer.The OpenCL
+implementation uses partial mapping of the buffer to reduce memory transfers.
+\subparagraph*{Distance Calculation}
+The distance calculation between query vector and sliding window is a vector by matrix multiplication operation. 
+For the dense matrices the implementation performs a serial computation of
+the distance, each thread working on its own example. Since all the threads
+process attributes in exactly same order there is no wavefront divergence. This
+is not the case for the sparse matrices and this approach will cause GPU
+underutilization.
+
+The optimal implementation depends on the size of the window and number of
+attributes present\cite{Sorensen2011}. For the small instance size ($ \leq 100
+$) and windows less than $ 10^{4} $ elements naive implementation will provide the best
+solution. Best all around distance calculation should apply different strategies
+depending on the windowsize and number of attributes\cite{Sorensen2011}. The
+alternatives are presented in the Figure \ref{MatrixVectorSorensen}.
+
+\begin{figure}[htp] \resizebox{1\textwidth}{!}{
+		\includegraphics[width=\textwidth]{sorensen_2011.png}
+		}
+	\caption{\label{MatrixVectorSorensen} Left; Four matrix-vector multiplication
+	kernels designed to perform well at different shapes m × n of A. Middle; Tuning
+	mesh. Right; Best kernel in practice. The dashed line indicates the minimum
+	21504 rows needed in A for full occupancy of the Nvidia Tesla C2050 card in a
+	one-thread-per-row kernel. Note the logarithmic axes. Reproduced from
+	High-Performance Matrix-Vector Multiplication on the GPU by Hans Henrik
+	Brandenborg S{\o}rensen\cite{Sorensen2011}}
+\end{figure}
+
+
+\subparagraph*{Selection}
+
+Alabi, et.al evaluated different selection strategies based on bucket sort algorithm and Merril-Grimshaw implementation of radix sort\cite{Alabi2012}.  
+
+The selection phase may be interleaved with the distance calculation to utilize
+both CPU and GPU cores and benefit from the better sort performance on low
+window sizes\cite{IntelSortTechRep}.
+
+The work needs to provide several alternative selection
+strategies such as Merill-Grimshaw radix sort\cite{journals/ppl/MerrillG11} or
+k-bucket Selection\cite{Alabi2012} to provide alternative GPU selection strategy.
+
+Figure \ref{SortSelectPerformance} shows measured performance of different
+selection strategies - merge sort from AMD Bolt library\cite{Bolt}, bitonic sort
+similiar to reference AMD implementation and radix select based on Alabi, et.
+al. implementation\cite{Alabi2012}. 
+The CPU sort and choose is a clear winner for small (<65535) window sizes. The
+merge sort should be applied to sub $ 2^25 $ windows
+ and radix select (with data copy) should be used for larger window sizes. 
+\textit{TODO:} The work should investigate in-place radix select and device
+enqueue for radix select optimization.
+\textit{TODO:} Radix select shows a semi-flat line up to $ 2^23 $ window size. The implementation should be checked for excessive setup.
+
+\begin{figure}[h]
+ \centering
+ \begin{gnuplot} 
+  set terminal epslatex color size 12cm,15cm
+  set style line 1 lt 1 lw 4 lc rgb '#4682b4' pt -1 
+  set style line 2 lt 1 lw 4 lc rgb '#ee0000' pt -1 
+  set style line 3 lt 1 lw 4 lc rgb '#008800' pt -1
+  set style line 4 lt 1 lw 4 lc rgb '#00aaaa' pt -1
+  set style line 5 lt 1 lw 4 lc rgb '#cc0000' pt -1
+  set xrange [10:27]
+  set xtics 1
+  set xlabel '$ 2^{Vector Size} $'
+  set ylabel '$ Execution Time (msec) $'
+  set key right top
+  set logscale y   
+  plot 'data/benchmark_sort/double_sort.data' using 1:3 with lines ls 1 title '$ std::sort $',\
+  'data/benchmark_sort/double_sort.data' using 1:4 with lines ls 2 ti '$ Bitonic Sort $',\
+  'data/benchmark_sort/double_sort.data' using 1:5 with lines ls 3 ti '$ Merge Sort $',\
+  'data/benchmark_sort/double_sort.data' using  1:6 with lines ls 4 ti '$ Radix Select $'
+ \end{gnuplot}
+ \caption{\label{SortSelectPerformance} Selection Algorithm Performance for
+ K=128. Test configuration GPU R9 390, CPU AMD A8-7600, AMD Catalyst version
+ 15.20.}
+\end{figure}
+
+
+
+\paragraph*{KD-Tree based k-Nearest Neighbours Search}
+The KD-Tree nearest neighbours search is composed of parallel tree construction
+over fixed set of instances and evaluation. 
+\subparagraph*{Parallel Tree Construction}
+The input to the algorithm is the matrix containing example instances and the
+desired tree depth.
+The tree nodes contain row numbers of the associated instances, split attribute,
+split value and  ranges for the associated instances.
+The tree split is performed iteratively until the desired tree depth is reached. 
+First the ranges are updated for each tree node using kernel based on
+Bolt max element kernel\cite{Bolt}. The kernel finds ranges for a
+given attribute for each of the nodes in a tree.
+A split dimension and point is chosen using the CPU routine.
+A mark kernel composes two flag vectors - one for the left child, other for the
+right one, a scan is performed to compute offsets and then the child nodes are
+populated with the indices of the instances belonging to them.
+\textit{TODO Picture}
+
+\subparagraph*{Evaluation}
+The evaluation uses same distance calculation kernel as the Naive
+Implementation. The evaluation can be either performed sequentially - a
+recursive algorithm similiar to the\cite{MOA} implementation or several query
+instances can be scheduled at once. 
+In this case the progress of each individual query instance is tracked by the
+bit vector containing the tree path processed so far, current
+node number and current found nearest neighbours.
+The algorithm alternates between invoking kernels for leaf node distance
+calculation and split plane distance calculation until all query instances are
+fully processed.
+ \textit{TODO Diagram}
+
+\paragraph*{Fast Johnson-Lindenstrauss transform implementation}
+  
+\paragraph*{Approximate k-Nearest Neighbours Search}
+\textit{TODO}
+
+
