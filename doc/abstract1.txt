@@ -5,3 +5,4 @@ We conclude that integrated GPUs provide a niche solution catered to small work 
 Accelerated Processing Units are central processors that feature integrated Graphical Processing Unit cores. Such heterogenous processors allow to leverage high-speed shared memory without data transfer overhead of the discrete GPUs. This work evaluates performance of integrated and discrete GPUs belonging to the same chip family on several variants of k-nearest neighbours and stochatic gradient descent algorithms using OpenCL and a novel Heterogenous System Architecture platforms.
 We conclude that integrated GPUs provide a niche solution catered to small work sizes that offers better power efficiency and simplicity of deployment.
 
+
